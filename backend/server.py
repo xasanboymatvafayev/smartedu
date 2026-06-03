@@ -1385,8 +1385,8 @@ async def admin_panel_page():
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({
                             phone: currentPhone, 
-                            password2: password2})
-                        });
+                            password2: password2
+                        })
                     
                     if (response.ok) {
                         document.getElementById('loginContainer').style.display = 'none';
