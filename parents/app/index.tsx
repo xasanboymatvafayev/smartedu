@@ -12,14 +12,13 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const ROLE = 'parent';
 
 export default function LoginScreen() {
-  const [step, setStep] = useState('login'); // login, verify, setPassword
+  const [step, setStep] = useState('login');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState('');
-  const [testCode, setTestCode] = useState('');
 
   useEffect(() => { checkLogin(); }, []);
 
@@ -48,11 +47,10 @@ export default function LoginScreen() {
           }
         } catch (err) { /* Continue to verification */ }
       }
-      const response = await axios.post(`${API_URL}/api/student/request-code`, { phone, user_type: ROLE });
-      setTestCode(response.data.code);
+      await axios.post(`${API_URL}/api/student/request-code`, { phone, user_type: ROLE });
       Alert.alert(
         'Telegram Kod',
-        `Bot orqali kod oling: https://t.me/SmartEduVerificationBot\n\nTest uchun: ${response.data.code}`,
+        "Telegram botimizga o'ting va tasdiqlash kodini oling:\nhttps://t.me/SmartEduVerificationBot",
         [{ text: 'OK' }]
       );
       setStep('verify');
@@ -108,13 +106,12 @@ export default function LoginScreen() {
         <LinearGradient colors={['#7b1a1a', '#c0392b']} style={styles.gradient}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <Image source={require('../assets/images/icon.png')} style={styles.logo} resizeMode="contain" />
-            <Text style={styles.title}>📱 Tasdiqlash</Text>
+            <Text style={styles.title}>Tasdiqlash</Text>
             <Text style={styles.subtitle}>Telegram botdan kod oling</Text>
             <View style={styles.formContainer}>
               <TouchableOpacity style={styles.telegramButton} onPress={() => Linking.openURL('https://t.me/SmartEduVerificationBot')}>
                 <Text style={styles.telegramButtonText}>🤖 SmartEduVerificationBot</Text>
               </TouchableOpacity>
-              <Text style={styles.testCodeText}>Test kod: {testCode}</Text>
               <TextInput style={styles.input} placeholder="6 raqamli kod" value={code} onChangeText={setCode} keyboardType="numeric" maxLength={6} />
               <TouchableOpacity style={styles.loginButton} onPress={handleVerifyCode} disabled={loading}>
                 <Text style={styles.loginButtonText}>{loading ? 'Tekshirilmoqda...' : 'Tasdiqlash'}</Text>
@@ -135,7 +132,7 @@ export default function LoginScreen() {
         <LinearGradient colors={['#7b1a1a', '#c0392b']} style={styles.gradient}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <Image source={require('../assets/images/icon.png')} style={styles.logo} resizeMode="contain" />
-            <Text style={styles.title}>🔐 Yangi Parol</Text>
+            <Text style={styles.title}>Yangi Parol</Text>
             <Text style={styles.subtitle}>Yangi parol yarating</Text>
             <View style={styles.formContainer}>
               <TextInput style={styles.input} placeholder="Yangi parol" value={newPassword} onChangeText={setNewPassword} secureTextEntry />
@@ -157,12 +154,12 @@ export default function LoginScreen() {
           <Text style={styles.title}>SmartEdu Parents</Text>
           <Text style={styles.subtitle}>Ota-onalar uchun panel</Text>
           <View style={styles.formContainer}>
-            <Text style={styles.label}>📱 Telefon raqam</Text>
+            <Text style={styles.label}>Telefon raqam</Text>
             <TextInput style={styles.input} placeholder="+998 xx xxx xx xx" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholderTextColor="#aaa" />
-            <Text style={styles.label}>🔐 Parol (agar bor bo'lsa)</Text>
+            <Text style={styles.label}>Parol (agar bor bo'lsa)</Text>
             <TextInput style={styles.input} placeholder="Parolingizni kiriting" value={password} onChangeText={setPassword} secureTextEntry placeholderTextColor="#aaa" />
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
-              <Text style={styles.loginButtonText}>{loading ? 'Yuklanmoqda...' : '🚀 Kirish / Kod yuborish'}</Text>
+              <Text style={styles.loginButtonText}>{loading ? 'Yuklanmoqda...' : 'Kirish / Kod yuborish'}</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.versionText}>SmartEdu v1.0 • Parents</Text>
@@ -186,7 +183,6 @@ const styles = StyleSheet.create({
   loginButtonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
   telegramButton: { backgroundColor: '#0088cc', padding: 14, borderRadius: 10, alignItems: 'center', marginBottom: 14 },
   telegramButtonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
-  testCodeText: { textAlign: 'center', color: '#999', fontSize: 13, marginBottom: 14 },
   backLink: { alignItems: 'center', marginTop: 14 },
   backLinkText: { color: '#7b1a1a', fontSize: 14 },
   versionText: { textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 24 },
