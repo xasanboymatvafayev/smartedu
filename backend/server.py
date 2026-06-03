@@ -1382,7 +1382,7 @@ async def admin_panel_page():
                         freezeBtn.onclick = (function(id, status) { return function() { toggleStatus(id, status); }; })(center.id, center.status);
                         const deleteBtn = document.createElement('button');
                         deleteBtn.className = 'btn-delete';
-                        deleteBtn.textContent = 'O\'chirish';
+                        deleteBtn.textContent = "O'chirish";
                         deleteBtn.onclick = (function(id) { return function() { deleteCenter(id); }; })(center.id);
                         actionsDiv.appendChild(editBtn);
                         actionsDiv.appendChild(freezeBtn);
@@ -1420,7 +1420,7 @@ async def admin_panel_page():
                     tariff: elements.centerTariff.value
                 };
                 if (!center.name || !center.phone || !center.password || !center.password2 || !center.address) {
-                    alert('Barcha maydonlarni to\'ldiring!');
+                    alert("Barcha maydonlarni to'ldiring!");
                     return;
                 }
                 if (center.password !== center.password2) {
@@ -1475,7 +1475,7 @@ async def admin_panel_page():
                         });
                         if (response.ok) {
                             loadDashboard();
-                            alert('Tarif muvaffaqiyatli o\'zgartirildi!');
+                            alert("Tarif muvaffaqiyatli o'zgartirildi!");
                         } else {
                             alert('Xatolik yuz berdi!');
                         }
@@ -1483,19 +1483,19 @@ async def admin_panel_page():
                         alert('Xatolik yuz berdi!');
                     }
                 } else if (tariff) {
-                    alert('Noto\'g\'ri tarif! Faqat: Pro, Pro+, VIP');
+                    alert("Noto'g'ri tarif! Faqat: Pro, Pro+, VIP");
                 }
             }
 
             async function deleteCenter(centerId) {
-                if (!confirm('Rostdan ham o\'chirmoqchimisiz? Bu amalni qaytarib bo\'lmaydi!')) return;
+                if (!confirm("Rostdan ham o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi!")) return;
                 try {
                     const response = await fetch(API_BASE + '/admin/centers/' + centerId, {
                         method: 'DELETE'
                     });
                     if (response.ok) {
                         loadDashboard();
-                        alert('Markaz o\'chirildi!');
+                        alert("Markaz o'chirildi!");
                     } else {
                         alert('Xatolik yuz berdi!');
                     }
