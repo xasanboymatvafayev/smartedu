@@ -26,12 +26,17 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Admin credentials from Railway environment variables
+ADMIN_PHONE = os.environ.get('ADMIN_PHONE', '')
+ADMIN_PASSWORD1 = os.environ.get('ADMIN_PASSWORD1', '')
+ADMIN_PASSWORD2 = os.environ.get('ADMIN_PASSWORD2', '')
+
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Telegram Bot
-TELEGRAM_BOT_TOKEN = "8665359095:AAFKWfy_cHdSGcaPVvOTJuFXfzrFS6GpAIs"
-telegram_bot = Bot(token=TELEGRAM_BOT_TOKEN)
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+telegram_bot = Bot(token=TELEGRAM_BOT_TOKEN) if TELEGRAM_BOT_TOKEN else None
 
 # In-memory storage for verification codes
 verification_codes = {}
@@ -138,6 +143,10 @@ async def send_telegram_code(phone: str, code: str):
             'expires': datetime.utcnow() + timedelta(minutes=5)
         }
         
+        if not telegram_bot:
+            logger.warning("Telegram bot not configured (TELEGRAM_BOT_TOKEN missing)")
+            return True  # Still allow login without telegram in dev
+        
         # Check if user already has telegram chat_id linked
         user_link = await db.telegram_links.find_one({"phone": phone})
         if user_link:
@@ -189,19 +198,22 @@ def serialize_doc(doc):
 
 @api_router.post("/admin/login")
 async def admin_login(phone: str = Body(...), password: str = Body(...)):
-    """Admin first login - phone + password"""
-    # Simple hardcoded admin for demo
-    if phone == "998901234567" and password == "admin123":
+    """Admin first login - phone + password from Railway env variables"""
+    if not ADMIN_PHONE or not ADMIN_PASSWORD1:
+        raise HTTPException(status_code=500, detail="Admin credentials not configured in Railway environment variables")
+    if phone == ADMIN_PHONE and password == ADMIN_PASSWORD1:
         return {"success": True, "message": "First password correct"}
     raise HTTPException(status_code=401, detail="Login xato")
 
 @api_router.post("/admin/login2")
 async def admin_login2(phone: str = Body(...), password2: str = Body(...)):
-    """Admin second login - second password"""
-    if phone == "998901234567" and password2 == "admin456":
+    """Admin second login - second password from Railway env variables"""
+    if not ADMIN_PHONE or not ADMIN_PASSWORD2:
+        raise HTTPException(status_code=500, detail="Admin credentials not configured in Railway environment variables")
+    if phone == ADMIN_PHONE and password2 == ADMIN_PASSWORD2:
         return {
             "success": True,
-            "token": "admin_token_123",
+            "token": "admin_token_secure",
             "message": "Login successful"
         }
     raise HTTPException(status_code=401, detail="Ikkinchi parol xato")
@@ -595,8 +607,7 @@ async def teacher_request_code(phone: str = Body(..., embed=True)):
     return {
         "success": success,
         "message": "Telegram botimizga o'ting va kodni oling",
-        "bot_link": f"https://t.me/YourBotUsername",
-        "code": code  # For testing only, remove in production
+        "bot_link": f"https://t.me/YourBotUsername"
     }
 
 @api_router.post("/teacher/verify-code")
@@ -757,8 +768,7 @@ async def student_request_code(phone: str = Body(...), user_type: str = Body(...
     return {
         "success": success,
         "message": "Telegram botimizga o'ting va kodni oling",
-        "bot_link": f"https://t.me/YourBotUsername",
-        "code": code  # For testing only
+        "bot_link": f"https://t.me/YourBotUsername"
     }
 
 @api_router.post("/student/verify-code")
@@ -1414,23 +1424,58 @@ async def admin_panel_page():
                     centers.forEach(center => {
                         const card = document.createElement('div');
                         card.className = 'center-card';
-                        card.innerHTML = `
-                            <div class="center-info">
-                                <h3>
-                                    ${center.name}
-                                    <span class="tariff-badge tariff-${center.tariff.toLowerCase().replace('+', 'plus')}">${center.tariff}</span>
-                                    <span class="status-badge status-${center.status}">${center.status === 'active' ? 'Faol' : 'Muzlatilgan'}</span>
-                                </h3>
-                                <p>📞 ${center.phone} | 📍 ${center.address}</p>
-                            </div>
-                            <div class="center-actions">
-                                <button class="btn-edit" onclick="updateTariff('${center.id}')">Tarif o'zgartirish</button>
-                                <button class="btn-freeze" onclick="toggleStatus('${center.id}', '${center.status}')">
-                                    ${center.status === 'active' ? 'Muzlatish' : 'Faollashtirish'}
-                                </button>
-                                <button class="btn-delete" onclick="deleteCenter('${center.id}')">O'chirish</button>
-                            </div>
-                        `;
+                        
+                        const tariffClass = center.tariff ? center.tariff.toLowerCase().replace('+', 'plus') : '';
+                        const statusText = center.status === 'active' ? 'Faol' : 'Muzlatilgan';
+                        const freezeText = center.status === 'active' ? 'Muzlatish' : 'Faollashtirish';
+                        
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'center-info';
+                        
+                        const h3 = document.createElement('h3');
+                        h3.textContent = center.name + ' ';
+                        
+                        const tariffBadge = document.createElement('span');
+                        tariffBadge.className = 'tariff-badge tariff-' + tariffClass;
+                        tariffBadge.textContent = center.tariff;
+                        h3.appendChild(tariffBadge);
+                        h3.appendChild(document.createTextNode(' '));
+                        
+                        const statusBadge = document.createElement('span');
+                        statusBadge.className = 'status-badge status-' + center.status;
+                        statusBadge.textContent = statusText;
+                        h3.appendChild(statusBadge);
+                        
+                        const p = document.createElement('p');
+                        p.textContent = '📞 ' + center.phone + ' | 📍 ' + center.address;
+                        
+                        infoDiv.appendChild(h3);
+                        infoDiv.appendChild(p);
+                        
+                        const actionsDiv = document.createElement('div');
+                        actionsDiv.className = 'center-actions';
+                        
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'btn-edit';
+                        editBtn.textContent = "Tarif o'zgartirish";
+                        editBtn.onclick = function() { updateTariff(center.id); };
+                        
+                        const freezeBtn = document.createElement('button');
+                        freezeBtn.className = 'btn-freeze';
+                        freezeBtn.textContent = freezeText;
+                        freezeBtn.onclick = function() { toggleStatus(center.id, center.status); };
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'btn-delete';
+                        deleteBtn.textContent = "O'chirish";
+                        deleteBtn.onclick = function() { deleteCenter(center.id); };
+                        
+                        actionsDiv.appendChild(editBtn);
+                        actionsDiv.appendChild(freezeBtn);
+                        actionsDiv.appendChild(deleteBtn);
+                        
+                        card.appendChild(infoDiv);
+                        card.appendChild(actionsDiv);
                         centersList.appendChild(card);
                     });
                 } catch (error) {
@@ -1607,6 +1652,37 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+@app.on_event("startup")
+async def startup_db_init():
+    """Initialize DB collections and indexes on startup"""
+    try:
+        # Create collections if they don't exist by creating indexes
+        await db.education_centers.create_index("phone", unique=True, sparse=True)
+        await db.education_centers.create_index("status")
+        
+        await db.teachers.create_index("phone")
+        await db.teachers.create_index("center_id")
+        
+        await db.students.create_index("phone")
+        await db.students.create_index("center_id")
+        await db.students.create_index("group_id")
+        
+        await db.groups.create_index("center_id")
+        await db.rooms.create_index("center_id")
+        await db.courses.create_index("center_id")
+        
+        await db.attendance.create_index([("group_id", 1), ("date", 1)])
+        await db.attendance.create_index("student_id")
+        
+        await db.transactions.create_index("student_id")
+        await db.store_items.create_index("center_id")
+        await db.store_orders.create_index("student_id")
+        await db.telegram_links.create_index("phone", unique=True, sparse=True)
+        
+        logger.info("✅ MongoDB collections and indexes initialized successfully")
+    except Exception as e:
+        logger.error(f"❌ DB initialization error: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
