@@ -1399,192 +1399,209 @@ async def admin_panel_page():
     </div>
 
     <script>
-        const API_BASE = '/api';
-        let currentPhone = '';
+    const API_BASE = '/api';
+    let currentPhone = '';
 
-        async function login1() {
-            const phone = document.getElementById('phone').value;
-            const password1 = document.getElementById('password1').value;
+    async function login1() {
+        const phone = document.getElementById('phone').value;
+        const password1 = document.getElementById('password1').value;
 
-            try {
-                const response = await fetch(`${API_BASE}/admin/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone, password: password1 })
-                });
+        try {
+            const response = await fetch(`${API_BASE}/admin/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, password: password1 })
+            });
 
-                if (response.ok) {
-                    currentPhone = phone;
-                    document.getElementById('loginStep1').style.display = 'none';
-                    document.getElementById('loginStep2').style.display = 'block';
-                } else {
-                    document.getElementById('error1').textContent = 'Login xato!';
-                }
-            } catch (error) {
-                document.getElementById('error1').textContent = 'Xatolik yuz berdi!';
+            if (response.ok) {
+                currentPhone = phone;
+                document.getElementById('loginStep1').style.display = 'none';
+                document.getElementById('loginStep2').style.display = 'block';
+            } else {
+                document.getElementById('error1').textContent = 'Login xato!';
             }
+        } catch (error) {
+            document.getElementById('error1').textContent = 'Xatolik yuz berdi!';
         }
+    }
 
-        async function login2() {
-            const password2 = document.getElementById('password2').value;
+    async function login2() {
+        const password2 = document.getElementById('password2').value;
 
-            try {
-                const response = await fetch(`${API_BASE}/admin/login2`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phone: currentPhone,
-                        password2: password2
-                    })
-                }); // ✅ MANAVI YOPILMAY QOLGAN QAVS TUZATILDI
+        try {
+            const response = await fetch(`${API_BASE}/admin/login2`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone: currentPhone,
+                    password2: password2
+                })
+            }); // ✅ TO‘G‘RI YOPILDI
 
-                if (response.ok) {
-                    document.getElementById('loginContainer').style.display = 'none';
-                    document.getElementById('dashboard').classList.add('active');
-                    loadDashboard();
-                } else {
-                    document.getElementById('error2').textContent = 'Ikkinchi parol xato!';
-                }
-            } catch (error) {
-                document.getElementById('error2').textContent = 'Xatolik yuz berdi!';
+            if (response.ok) {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                loadDashboard();
+            } else {
+                document.getElementById('error2').textContent = 'Ikkinchi parol xato!';
             }
+        } catch (error) {
+            document.getElementById('error2').textContent = 'Xatolik yuz berdi!';
         }
+    }
 
-        function logout() {
-            document.getElementById('loginContainer').style.display = 'flex';
-            document.getElementById('dashboard').classList.remove('active');
-            document.getElementById('loginStep1').style.display = 'block';
-            document.getElementById('loginStep2').style.display = 'none';
+    function logout() {
+        document.getElementById('loginContainer').style.display = 'flex';
+        document.getElementById('dashboard').classList.remove('active');
+        document.getElementById('loginStep1').style.display = 'block';
+        document.getElementById('loginStep2').style.display = 'none';
+    }
+
+    async function loadDashboard() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/dashboard`);
+            const data = await response.json();
+
+            document.getElementById('totalCenters').textContent = data.total_centers;
+            document.getElementById('activeCenters').textContent = data.active_centers;
+            document.getElementById('totalStudents').textContent = data.total_students;
+
+            loadCenters();
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
         }
+    }
 
-        async function loadDashboard() {
-            try {
-                const response = await fetch(`${API_BASE}/admin/dashboard`);
-                const data = await response.json();
+    async function loadCenters() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/centers`);
+            const centers = await response.json();
 
-                document.getElementById('totalCenters').textContent = data.total_centers;
-                document.getElementById('activeCenters').textContent = data.active_centers;
-                document.getElementById('totalStudents').textContent = data.total_students;
+            const centersList = document.getElementById('centersList');
+            centersList.innerHTML = '';
 
-                loadCenters();
-            } catch (error) {
-                console.error('Error loading dashboard:', error);
+            centers.forEach(center => {
+                const card = document.createElement('div');
+                card.className = 'center-card';
+
+                const tariffClass = center.tariff ? center.tariff.toLowerCase().replace('+', 'plus') : '';
+                const statusText = center.status === 'active' ? 'Faol' : 'Muzlatilgan';
+                const freezeText = center.status === 'active' ? 'Muzlatish' : 'Faollashtirish';
+
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'center-info';
+
+                const h3 = document.createElement('h3');
+                h3.textContent = center.name + ' ';
+
+                const tariffBadge = document.createElement('span');
+                tariffBadge.className = 'tariff-badge tariff-' + tariffClass;
+                tariffBadge.textContent = center.tariff;
+                h3.appendChild(tariffBadge);
+
+                const statusBadge = document.createElement('span');
+                statusBadge.className = 'status-badge status-' + center.status;
+                statusBadge.textContent = statusText;
+                h3.appendChild(statusBadge);
+
+                const p = document.createElement('p');
+                p.textContent = '📞 ' + center.phone + ' | 📍 ' + center.address;
+
+                infoDiv.appendChild(h3);
+                infoDiv.appendChild(p);
+
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'center-actions';
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-edit';
+                editBtn.textContent = "Tarif o'zgartirish";
+                editBtn.onclick = function () { updateTariff(center.id); };
+
+                const freezeBtn = document.createElement('button');
+                freezeBtn.className = 'btn-freeze';
+                freezeBtn.textContent = freezeText;
+                freezeBtn.onclick = function () { toggleStatus(center.id, center.status); };
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-delete';
+                deleteBtn.textContent = "O'chirish";
+                deleteBtn.onclick = function () { deleteCenter(center.id); };
+
+                actionsDiv.appendChild(editBtn);
+                actionsDiv.appendChild(freezeBtn);
+                actionsDiv.appendChild(deleteBtn);
+
+                card.appendChild(infoDiv);
+                card.appendChild(actionsDiv);
+                centersList.appendChild(card);
+            });
+        } catch (error) {
+            console.error('Error loading centers:', error);
+        }
+    }
+
+    function openAddModal() {
+        document.getElementById('addModal').classList.add('active');
+    }
+
+    function closeAddModal() {
+        document.getElementById('addModal').classList.remove('active');
+    }
+
+    async function createCenter() {
+        const center = {
+            name: document.getElementById('centerName').value,
+            phone: document.getElementById('centerPhone').value,
+            password: document.getElementById('centerPassword').value,
+            password2: document.getElementById('centerPassword2').value,
+            address: document.getElementById('centerAddress').value,
+            tariff: document.getElementById('centerTariff').value
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/admin/centers`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(center)
+            });
+
+            if (response.ok) {
+                closeAddModal();
+                loadDashboard();
+                alert('Markaz muvaffaqiyatli yaratildi!');
             }
+        } catch (error) {
+            alert('Xatolik yuz berdi!');
         }
+    }
 
-        async function loadCenters() {
-            try {
-                const response = await fetch(`${API_BASE}/admin/centers`);
-                const centers = await response.json();
+    async function toggleStatus(centerId, currentStatus) {
+        const newStatus = currentStatus === 'active' ? 'frozen' : 'active';
 
-                const centersList = document.getElementById('centersList');
-                centersList.innerHTML = '';
+        try {
+            const response = await fetch(`${API_BASE}/admin/centers/${centerId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
 
-                centers.forEach(center => {
-                    const card = document.createElement('div');
-                    card.className = 'center-card';
-
-                    const tariffClass = center.tariff ? center.tariff.toLowerCase().replace('+', 'plus') : '';
-                    const statusText = center.status === 'active' ? 'Faol' : 'Muzlatilgan';
-                    const freezeText = center.status === 'active' ? 'Muzlatish' : 'Faollashtirish';
-
-                    const infoDiv = document.createElement('div');
-                    infoDiv.className = 'center-info';
-
-                    const h3 = document.createElement('h3');
-                    h3.textContent = center.name + ' ';
-
-                    const tariffBadge = document.createElement('span');
-                    tariffBadge.className = 'tariff-badge tariff-' + tariffClass;
-                    tariffBadge.textContent = center.tariff;
-                    h3.appendChild(tariffBadge);
-                    h3.appendChild(document.createTextNode(' '));
-
-                    const statusBadge = document.createElement('span');
-                    statusBadge.className = 'status-badge status-' + center.status;
-                    statusBadge.textContent = statusText;
-                    h3.appendChild(statusBadge);
-
-                    const p = document.createElement('p');
-                    p.textContent = '📞 ' + center.phone + ' | 📍 ' + center.address;
-
-                    infoDiv.appendChild(h3);
-                    infoDiv.appendChild(p);
-
-                    const actionsDiv = document.createElement('div');
-                    actionsDiv.className = 'center-actions';
-
-                    const editBtn = document.createElement('button');
-                    editBtn.className = 'btn-edit';
-                    editBtn.textContent = "Tarif o'zgartirish";
-                    editBtn.onclick = function () { updateTariff(center.id); };
-
-                    const freezeBtn = document.createElement('button');
-                    freezeBtn.className = 'btn-freeze';
-                    freezeBtn.textContent = freezeText;
-                    freezeBtn.onclick = function () { toggleStatus(center.id, center.status); };
-
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'btn-delete';
-                    deleteBtn.textContent = "O'chirish";
-                    deleteBtn.onclick = function () { deleteCenter(center.id); };
-
-                    actionsDiv.appendChild(editBtn);
-                    actionsDiv.appendChild(freezeBtn);
-                    actionsDiv.appendChild(deleteBtn);
-
-                    card.appendChild(infoDiv);
-                    card.appendChild(actionsDiv);
-                    centersList.appendChild(card);
-                });
-            } catch (error) {
-                console.error('Error loading centers:', error);
+            if (response.ok) {
+                loadDashboard();
             }
+        } catch (error) {
+            alert('Xatolik yuz berdi!');
         }
+    }
 
-        function openAddModal() {
-            document.getElementById('addModal').classList.add('active');
-        }
-
-        function closeAddModal() {
-            document.getElementById('addModal').classList.remove('active');
-        }
-
-        async function createCenter() {
-            const center = {
-                name: document.getElementById('centerName').value,
-                phone: document.getElementById('centerPhone').value,
-                password: document.getElementById('centerPassword').value,
-                password2: document.getElementById('centerPassword2').value,
-                address: document.getElementById('centerAddress').value,
-                tariff: document.getElementById('centerTariff').value
-            };
-
+    async function updateTariff(centerId) {
+        const tariff = prompt('Yangi tarif (Pro, Pro+, VIP):');
+        if (tariff && ['Pro', 'Pro+', 'VIP'].includes(tariff)) {
             try {
-                const response = await fetch(`${API_BASE}/admin/centers`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(center)
-                });
-
-                if (response.ok) {
-                    closeAddModal();
-                    loadDashboard();
-                    alert('Markaz muvaffaqiyatli yaratildi!');
-                }
-            } catch (error) {
-                alert('Xatolik yuz berdi!');
-            }
-        }
-
-        async function toggleStatus(centerId, currentStatus) {
-            const newStatus = currentStatus === 'active' ? 'frozen' : 'active';
-
-            try {
-                const response = await fetch(`${API_BASE}/admin/centers/${centerId}/status`, {
+                const response = await fetch(`${API_BASE}/admin/centers/${centerId}/tariff`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus })
+                    body: JSON.stringify({ tariff })
                 });
 
                 if (response.ok) {
@@ -1594,42 +1611,24 @@ async def admin_panel_page():
                 alert('Xatolik yuz berdi!');
             }
         }
+    }
 
-        async function updateTariff(centerId) {
-            const tariff = prompt('Yangi tarif (Pro, Pro+, VIP):');
-            if (tariff && ['Pro', 'Pro+', 'VIP'].includes(tariff)) {
-                try {
-                    const response = await fetch(`${API_BASE}/admin/centers/${centerId}/tariff`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ tariff })
-                    });
+    async function deleteCenter(centerId) {
+        if (confirm('Rostdan ham o\'chirmoqchimisiz?')) {
+            try {
+                const response = await fetch(`${API_BASE}/admin/centers/${centerId}`, {
+                    method: 'DELETE'
+                });
 
-                    if (response.ok) {
-                        loadDashboard();
-                    }
-                } catch (error) {
-                    alert('Xatolik yuz berdi!');
+                if (response.ok) {
+                    loadDashboard();
                 }
+            } catch (error) {
+                alert('Xatolik yuz berdi!');
             }
         }
-
-        async function deleteCenter(centerId) {
-            if (confirm('Rostdan ham o\'chirmoqchimisiz?')) {
-                try {
-                    const response = await fetch(`${API_BASE}/admin/centers/${centerId}`, {
-                        method: 'DELETE'
-                    });
-
-                    if (response.ok) {
-                        loadDashboard();
-                    }
-                } catch (error) {
-                    alert('Xatolik yuz berdi!');
-                }
-            }
-        }
-    </script>
+    }
+</script>
 </body>
 
 </html>
