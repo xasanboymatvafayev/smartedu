@@ -1383,8 +1383,10 @@ async def admin_panel_page():
                     const response = await fetch(`${API_BASE}/admin/login2`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({phone: currentPhone, password2})
-                    });
+                        body: JSON.stringify({
+                            phone: currentPhone, 
+                            password2: password2})
+                        });
                     
                     if (response.ok) {
                         document.getElementById('loginContainer').style.display = 'none';
