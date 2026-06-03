@@ -11,8 +11,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function LoginScreen() {
-  const [step, setStep] = useState('role'); // role, login, verify, setPassword
-  const [role, setRole] = useState(''); // boss, teacher, student, parent
+  const [step, setStep] = useState('role');
+  const [role, setRole] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
@@ -20,7 +20,6 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState('');
   const [hasPassword, setHasPassword] = useState(false);
-  const [testCode, setTestCode] = useState(''); // For testing
 
   useEffect(() => { checkLogin(); }, []);
 
@@ -59,7 +58,6 @@ export default function LoginScreen() {
           router.replace('/dashboard');
         }
       } else if (role === 'teacher') {
-        // Try password login first
         if (password) {
           try {
             const response = await axios.post(`${API_URL}/api/teacher/login`, { phone, password });
@@ -75,17 +73,14 @@ export default function LoginScreen() {
             // Continue to verification
           }
         }
-        // Request code
-        const response = await axios.post(`${API_URL}/api/teacher/request-code`, { phone });
-        setTestCode(response.data.code); // For testing
+        await axios.post(`${API_URL}/api/teacher/request-code`, { phone });
         Alert.alert(
           'Telegram Kod',
-          `Bot orqali kod oling: https://t.me/EduTizimBot\n\nTest uchun: ${response.data.code}`,
+          "Telegram botimizga o'ting va tasdiqlash kodini oling:\nhttps://t.me/SmartEduVerificationBot",
           [{ text: 'OK' }]
         );
         setStep('verify');
       } else if (role === 'student' || role === 'parent') {
-        // Try password login first
         if (password) {
           try {
             const response = await axios.post(`${API_URL}/api/student/login`, { phone, password, user_type: role });
@@ -101,11 +96,10 @@ export default function LoginScreen() {
             // Continue to verification
           }
         }
-        const response = await axios.post(`${API_URL}/api/student/request-code`, { phone, user_type: role });
-        setTestCode(response.data.code);
+        await axios.post(`${API_URL}/api/student/request-code`, { phone, user_type: role });
         Alert.alert(
           'Telegram Kod',
-          `Bot orqali kod oling: https://t.me/EduTizimBot\n\nTest uchun: ${response.data.code}`,
+          "Telegram botimizga o'ting va tasdiqlash kodini oling:\nhttps://t.me/SmartEduVerificationBot",
           [{ text: 'OK' }]
         );
         setStep('verify');
@@ -144,7 +138,7 @@ export default function LoginScreen() {
         }
       }
     } catch (error: any) {
-      Alert.alert('Xato', error.response?.data?.detail || 'Kod noto\'g\'ri');
+      Alert.alert('Xato', error.response?.data?.detail || "Kod noto'g'ri");
     } finally {
       setLoading(false);
     }
@@ -152,7 +146,7 @@ export default function LoginScreen() {
 
   const handleSetPassword = async () => {
     if (!newPassword || newPassword.length < 4) {
-      Alert.alert('Xato', 'Parol kamida 4 ta belgi bo\'lishi kerak');
+      Alert.alert('Xato', "Parol kamida 4 ta belgi bo'lishi kerak");
       return;
     }
     setLoading(true);
@@ -181,10 +175,9 @@ export default function LoginScreen() {
   };
 
   const openTelegramBot = () => {
-    Linking.openURL('https://t.me/EduTizimBot');
+    Linking.openURL('https://t.me/SmartEduVerificationBot');
   };
 
-  // ROLE SELECTION
   if (step === 'role') {
     return (
       <LinearGradient colors={['#667eea', '#764ba2']} style={styles.container}>
@@ -220,7 +213,6 @@ export default function LoginScreen() {
     );
   }
 
-  // VERIFICATION CODE
   if (step === 'verify') {
     return (
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
@@ -228,14 +220,10 @@ export default function LoginScreen() {
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <Text style={styles.title}>📱 Tasdiqlash</Text>
             <Text style={styles.subtitle}>Telegram botdan kod oling</Text>
-
             <View style={styles.formContainer}>
               <TouchableOpacity style={styles.telegramButton} onPress={openTelegramBot}>
                 <Text style={styles.telegramButtonText}>🤖 Telegram Botga O'tish</Text>
               </TouchableOpacity>
-
-              <Text style={styles.testCodeText}>Test kod: {testCode}</Text>
-
               <TextInput
                 style={styles.input}
                 placeholder="6 raqamli kod"
@@ -244,11 +232,9 @@ export default function LoginScreen() {
                 keyboardType="numeric"
                 maxLength={6}
               />
-
               <TouchableOpacity style={styles.loginButton} onPress={handleVerifyCode} disabled={loading}>
                 <Text style={styles.loginButtonText}>{loading ? 'Tekshirilmoqda...' : 'Tasdiqlash'}</Text>
               </TouchableOpacity>
-
               <TouchableOpacity style={styles.backLink} onPress={() => setStep('login')}>
                 <Text style={styles.backLinkText}>← Orqaga</Text>
               </TouchableOpacity>
@@ -259,7 +245,6 @@ export default function LoginScreen() {
     );
   }
 
-  // SET PASSWORD
   if (step === 'setPassword') {
     return (
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
@@ -267,7 +252,6 @@ export default function LoginScreen() {
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <Text style={styles.title}>🔐 Yangi Parol</Text>
             <Text style={styles.subtitle}>Yangi parol o'ylab toping</Text>
-
             <View style={styles.formContainer}>
               <TextInput
                 style={styles.input}
@@ -276,7 +260,6 @@ export default function LoginScreen() {
                 onChangeText={setNewPassword}
                 secureTextEntry
               />
-
               <TouchableOpacity style={styles.loginButton} onPress={handleSetPassword} disabled={loading}>
                 <Text style={styles.loginButtonText}>{loading ? 'Saqlanmoqda...' : 'Saqlash va Kirish'}</Text>
               </TouchableOpacity>
@@ -287,8 +270,7 @@ export default function LoginScreen() {
     );
   }
 
-  // LOGIN
-  const roleLabel = role === 'boss' ? 'O\'quv Markaz' : role === 'teacher' ? 'Ustoz' : role === 'student' ? 'O\'quvchi' : 'Ota-Ona';
+  const roleLabel = role === 'boss' ? "O'quv Markaz" : role === 'teacher' ? 'Ustoz' : role === 'student' ? "O'quvchi" : 'Ota-Ona';
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
@@ -296,7 +278,6 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Text style={styles.title}>🔐 Kirish</Text>
           <Text style={styles.subtitle}>{roleLabel}</Text>
-
           <View style={styles.formContainer}>
             <TextInput
               style={styles.input}
@@ -305,7 +286,6 @@ export default function LoginScreen() {
               onChangeText={setPhone}
               keyboardType="phone-pad"
             />
-
             <TextInput
               style={styles.input}
               placeholder="Parol (agar bor bo'lsa)"
@@ -313,13 +293,11 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               secureTextEntry
             />
-
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
               <Text style={styles.loginButtonText}>
                 {loading ? 'Yuklanmoqda...' : role === 'boss' ? 'Kirish' : 'Kirish / Kod yuborish'}
               </Text>
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.backLink} onPress={() => setStep('role')}>
               <Text style={styles.backLinkText}>← Role o'zgartirish</Text>
             </TouchableOpacity>
@@ -354,5 +332,4 @@ const styles = StyleSheet.create({
   roleSubtitle: { fontSize: 14, color: '#666' },
   telegramButton: { backgroundColor: '#0088cc', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 15 },
   telegramButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  testCodeText: { textAlign: 'center', color: '#999', fontSize: 14, marginBottom: 15 },
 });
