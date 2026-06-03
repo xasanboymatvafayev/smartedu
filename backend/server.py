@@ -1035,7 +1035,7 @@ async def admin_panel_page():
             font-weight: 500;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -1162,6 +1162,7 @@ async def admin_panel_page():
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .center-info h3 {
@@ -1172,6 +1173,10 @@ async def admin_panel_page():
         .center-info p {
             color: #666;
             font-size: 14px;
+        }
+
+        .center-actions {
+            margin-top: 10px;
         }
 
         .center-actions button {
@@ -1297,6 +1302,22 @@ async def admin_panel_page():
             background: #e74c3c;
             color: white;
         }
+
+        @media (max-width: 768px) {
+            .center-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .center-actions {
+                margin-top: 15px;
+            }
+            
+            .center-actions button {
+                margin-left: 0;
+                margin-right: 10px;
+            }
+        }
     </style>
 </head>
 
@@ -1313,7 +1334,7 @@ async def admin_panel_page():
                     <label>Parol 1</label>
                     <input type="password" id="password1" placeholder="Birinchi parol">
                 </div>
-                <button class="btn" onclick="login1()">Kirish</button>
+                <button class="btn" id="loginBtn1">Kirish</button>
                 <div id="error1" class="error"></div>
             </div>
             <div id="loginStep2" style="display:none;">
@@ -1321,7 +1342,7 @@ async def admin_panel_page():
                     <label>Parol 2</label>
                     <input type="password" id="password2" placeholder="Ikkinchi parol">
                 </div>
-                <button class="btn" onclick="login2()">Tasdiqlash</button>
+                <button class="btn" id="loginBtn2">Tasdiqlash</button>
                 <div id="error2" class="error"></div>
             </div>
         </div>
@@ -1331,7 +1352,7 @@ async def admin_panel_page():
         <div class="container">
             <div class="header">
                 <h1>📊 Admin Dashboard</h1>
-                <button class="logout-btn" onclick="logout()">Chiqish</button>
+                <button class="logout-btn" id="logoutBtn">Chiqish</button>
             </div>
 
             <div class="stats">
@@ -1352,7 +1373,7 @@ async def admin_panel_page():
             <div class="centers-section">
                 <div class="section-header">
                     <h2>O'quv Markazlar</h2>
-                    <button class="add-btn" onclick="openAddModal()">+ Yangi Markaz</button>
+                    <button class="add-btn" id="addCenterBtn">+ Yangi Markaz</button>
                 </div>
                 <div id="centersList" class="centers-list"></div>
             </div>
@@ -1385,250 +1406,387 @@ async def admin_panel_page():
             </div>
             <div class="form-group">
                 <label>Tarif</label>
-                <select id="centerTariff" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:5px;">
+                <select id="centerTariff">
                     <option value="Pro">Pro - 200,000 so'm (100 o'quvchi, 5 guruh, 5 ustoz)</option>
                     <option value="Pro+">Pro+ - 500,000 so'm (300 o'quvchi, 50 guruh, 50 ustoz)</option>
                     <option value="VIP">VIP - Cheksiz</option>
                 </select>
             </div>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeAddModal()">Bekor qilish</button>
-                <button class="btn-submit" onclick="createCenter()">Yaratish</button>
+                <button class="btn-cancel" id="cancelModalBtn">Bekor qilish</button>
+                <button class="btn-submit" id="submitCenterBtn">Yaratish</button>
             </div>
         </div>
     </div>
 
     <script>
-    const API_BASE = '/api';
-    let currentPhone = '';
+        (function() {
+            const API_BASE = '/api';
+            let currentPhone = '';
 
-    async function login1() {
-        const phone = document.getElementById('phone').value;
-        const password1 = document.getElementById('password1').value;
+            // Helper function to get DOM elements
+            const elements = {
+                loginContainer: document.getElementById('loginContainer'),
+                dashboard: document.getElementById('dashboard'),
+                loginStep1: document.getElementById('loginStep1'),
+                loginStep2: document.getElementById('loginStep2'),
+                phone: document.getElementById('phone'),
+                password1: document.getElementById('password1'),
+                password2: document.getElementById('password2'),
+                error1: document.getElementById('error1'),
+                error2: document.getElementById('error2'),
+                totalCenters: document.getElementById('totalCenters'),
+                activeCenters: document.getElementById('activeCenters'),
+                totalStudents: document.getElementById('totalStudents'),
+                centersList: document.getElementById('centersList'),
+                addModal: document.getElementById('addModal'),
+                centerName: document.getElementById('centerName'),
+                centerPhone: document.getElementById('centerPhone'),
+                centerPassword: document.getElementById('centerPassword'),
+                centerPassword2: document.getElementById('centerPassword2'),
+                centerAddress: document.getElementById('centerAddress'),
+                centerTariff: document.getElementById('centerTariff')
+            };
 
-        try {
-            const response = await fetch(`${API_BASE}/admin/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, password: password1 })
-            });
+            // Login 1 function
+            async function login1() {
+                const phone = elements.phone.value;
+                const password1 = elements.password1.value;
 
-            if (response.ok) {
-                currentPhone = phone;
-                document.getElementById('loginStep1').style.display = 'none';
-                document.getElementById('loginStep2').style.display = 'block';
-            } else {
-                document.getElementById('error1').textContent = 'Login xato!';
-            }
-        } catch (error) {
-            document.getElementById('error1').textContent = 'Xatolik yuz berdi!';
-        }
-    }
-
-    async function login2() {
-        const password2 = document.getElementById('password2').value;
-
-        try {
-            const response = await fetch(`${API_BASE}/admin/login2`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    phone: currentPhone,
-                    password2: password2
-                })
-            }); // ✅ TO‘G‘RI YOPILDI
-
-            if (response.ok) {
-                document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('dashboard').classList.add('active');
-                loadDashboard();
-            } else {
-                document.getElementById('error2').textContent = 'Ikkinchi parol xato!';
-            }
-        } catch (error) {
-            document.getElementById('error2').textContent = 'Xatolik yuz berdi!';
-        }
-    }
-
-    function logout() {
-        document.getElementById('loginContainer').style.display = 'flex';
-        document.getElementById('dashboard').classList.remove('active');
-        document.getElementById('loginStep1').style.display = 'block';
-        document.getElementById('loginStep2').style.display = 'none';
-    }
-
-    async function loadDashboard() {
-        try {
-            const response = await fetch(`${API_BASE}/admin/dashboard`);
-            const data = await response.json();
-
-            document.getElementById('totalCenters').textContent = data.total_centers;
-            document.getElementById('activeCenters').textContent = data.active_centers;
-            document.getElementById('totalStudents').textContent = data.total_students;
-
-            loadCenters();
-        } catch (error) {
-            console.error('Error loading dashboard:', error);
-        }
-    }
-
-    async function loadCenters() {
-        try {
-            const response = await fetch(`${API_BASE}/admin/centers`);
-            const centers = await response.json();
-
-            const centersList = document.getElementById('centersList');
-            centersList.innerHTML = '';
-
-            centers.forEach(center => {
-                const card = document.createElement('div');
-                card.className = 'center-card';
-
-                const tariffClass = center.tariff ? center.tariff.toLowerCase().replace('+', 'plus') : '';
-                const statusText = center.status === 'active' ? 'Faol' : 'Muzlatilgan';
-                const freezeText = center.status === 'active' ? 'Muzlatish' : 'Faollashtirish';
-
-                const infoDiv = document.createElement('div');
-                infoDiv.className = 'center-info';
-
-                const h3 = document.createElement('h3');
-                h3.textContent = center.name + ' ';
-
-                const tariffBadge = document.createElement('span');
-                tariffBadge.className = 'tariff-badge tariff-' + tariffClass;
-                tariffBadge.textContent = center.tariff;
-                h3.appendChild(tariffBadge);
-
-                const statusBadge = document.createElement('span');
-                statusBadge.className = 'status-badge status-' + center.status;
-                statusBadge.textContent = statusText;
-                h3.appendChild(statusBadge);
-
-                const p = document.createElement('p');
-                p.textContent = '📞 ' + center.phone + ' | 📍 ' + center.address;
-
-                infoDiv.appendChild(h3);
-                infoDiv.appendChild(p);
-
-                const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'center-actions';
-
-                const editBtn = document.createElement('button');
-                editBtn.className = 'btn-edit';
-                editBtn.textContent = "Tarif o'zgartirish";
-                editBtn.onclick = function () { updateTariff(center.id); };
-
-                const freezeBtn = document.createElement('button');
-                freezeBtn.className = 'btn-freeze';
-                freezeBtn.textContent = freezeText;
-                freezeBtn.onclick = function () { toggleStatus(center.id, center.status); };
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn-delete';
-                deleteBtn.textContent = "O'chirish";
-                deleteBtn.onclick = function () { deleteCenter(center.id); };
-
-                actionsDiv.appendChild(editBtn);
-                actionsDiv.appendChild(freezeBtn);
-                actionsDiv.appendChild(deleteBtn);
-
-                card.appendChild(infoDiv);
-                card.appendChild(actionsDiv);
-                centersList.appendChild(card);
-            });
-        } catch (error) {
-            console.error('Error loading centers:', error);
-        }
-    }
-
-    function openAddModal() {
-        document.getElementById('addModal').classList.add('active');
-    }
-
-    function closeAddModal() {
-        document.getElementById('addModal').classList.remove('active');
-    }
-
-    async function createCenter() {
-        const center = {
-            name: document.getElementById('centerName').value,
-            phone: document.getElementById('centerPhone').value,
-            password: document.getElementById('centerPassword').value,
-            password2: document.getElementById('centerPassword2').value,
-            address: document.getElementById('centerAddress').value,
-            tariff: document.getElementById('centerTariff').value
-        };
-
-        try {
-            const response = await fetch(`${API_BASE}/admin/centers`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(center)
-            });
-
-            if (response.ok) {
-                closeAddModal();
-                loadDashboard();
-                alert('Markaz muvaffaqiyatli yaratildi!');
-            }
-        } catch (error) {
-            alert('Xatolik yuz berdi!');
-        }
-    }
-
-    async function toggleStatus(centerId, currentStatus) {
-        const newStatus = currentStatus === 'active' ? 'frozen' : 'active';
-
-        try {
-            const response = await fetch(`${API_BASE}/admin/centers/${centerId}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
-
-            if (response.ok) {
-                loadDashboard();
-            }
-        } catch (error) {
-            alert('Xatolik yuz berdi!');
-        }
-    }
-
-    async function updateTariff(centerId) {
-        const tariff = prompt('Yangi tarif (Pro, Pro+, VIP):');
-        if (tariff && ['Pro', 'Pro+', 'VIP'].includes(tariff)) {
-            try {
-                const response = await fetch(`${API_BASE}/admin/centers/${centerId}/tariff`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tariff })
-                });
-
-                if (response.ok) {
-                    loadDashboard();
+                if (!phone || !password1) {
+                    elements.error1.textContent = 'Telefon va parolni kiriting!';
+                    return;
                 }
-            } catch (error) {
-                alert('Xatolik yuz berdi!');
-            }
-        }
-    }
 
-    async function deleteCenter(centerId) {
-        if (confirm('Rostdan ham o\'chirmoqchimisiz?')) {
-            try {
-                const response = await fetch(`${API_BASE}/admin/centers/${centerId}`, {
-                    method: 'DELETE'
-                });
+                try {
+                    const response = await fetch(`${API_BASE}/admin/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone, password: password1 })
+                    });
 
-                if (response.ok) {
-                    loadDashboard();
+                    if (response.ok) {
+                        currentPhone = phone;
+                        elements.loginStep1.style.display = 'none';
+                        elements.loginStep2.style.display = 'block';
+                        elements.error1.textContent = '';
+                        elements.password2.value = '';
+                    } else {
+                        const error = await response.json();
+                        elements.error1.textContent = error.detail || 'Login xato!';
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    elements.error1.textContent = 'Xatolik yuz berdi!';
                 }
-            } catch (error) {
-                alert('Xatolik yuz berdi!');
             }
-        }
-    }
-</script>
+
+            // Login 2 function
+            async function login2() {
+                const password2 = elements.password2.value;
+
+                if (!password2) {
+                    elements.error2.textContent = 'Parolni kiriting!';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE}/admin/login2`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            phone: currentPhone,
+                            password2: password2
+                        })
+                    });
+
+                    if (response.ok) {
+                        elements.loginContainer.style.display = 'none';
+                        elements.dashboard.classList.add('active');
+                        elements.error2.textContent = '';
+                        await loadDashboard();
+                    } else {
+                        const error = await response.json();
+                        elements.error2.textContent = error.detail || 'Ikkinchi parol xato!';
+                    }
+                } catch (error) {
+                    console.error('Login2 error:', error);
+                    elements.error2.textContent = 'Xatolik yuz berdi!';
+                }
+            }
+
+            // Logout function
+            function logout() {
+                elements.loginContainer.style.display = 'flex';
+                elements.dashboard.classList.remove('active');
+                elements.loginStep1.style.display = 'block';
+                elements.loginStep2.style.display = 'none';
+                elements.phone.value = '';
+                elements.password1.value = '';
+                elements.password2.value = '';
+                elements.error1.textContent = '';
+                elements.error2.textContent = '';
+                currentPhone = '';
+            }
+
+            // Load dashboard data
+            async function loadDashboard() {
+                try {
+                    const response = await fetch(`${API_BASE}/admin/dashboard`);
+                    const data = await response.json();
+
+                    elements.totalCenters.textContent = data.total_centers || 0;
+                    elements.activeCenters.textContent = data.active_centers || 0;
+                    elements.totalStudents.textContent = data.total_students || 0;
+
+                    await loadCenters();
+                } catch (error) {
+                    console.error('Error loading dashboard:', error);
+                }
+            }
+
+            // Load centers list
+            async function loadCenters() {
+                try {
+                    const response = await fetch(`${API_BASE}/admin/centers`);
+                    const centers = await response.json();
+
+                    elements.centersList.innerHTML = '';
+
+                    if (!centers || centers.length === 0) {
+                        elements.centersList.innerHTML = '<p style="text-align:center;color:#999;">Hech qanday markaz topilmadi</p>';
+                        return;
+                    }
+
+                    centers.forEach(center => {
+                        const card = document.createElement('div');
+                        card.className = 'center-card';
+
+                        const tariffClass = center.tariff ? center.tariff.toLowerCase().replace('+', 'plus') : '';
+                        const statusText = center.status === 'active' ? 'Faol' : 'Muzlatilgan';
+                        const freezeText = center.status === 'active' ? 'Muzlatish' : 'Faollashtirish';
+
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'center-info';
+
+                        const h3 = document.createElement('h3');
+                        h3.textContent = center.name + ' ';
+
+                        const tariffBadge = document.createElement('span');
+                        tariffBadge.className = `tariff-badge tariff-${tariffClass}`;
+                        tariffBadge.textContent = center.tariff;
+                        h3.appendChild(tariffBadge);
+
+                        const statusBadge = document.createElement('span');
+                        statusBadge.className = `status-badge status-${center.status}`;
+                        statusBadge.textContent = statusText;
+                        h3.appendChild(statusBadge);
+
+                        const p = document.createElement('p');
+                        p.textContent = `📞 ${center.phone} | 📍 ${center.address}`;
+
+                        infoDiv.appendChild(h3);
+                        infoDiv.appendChild(p);
+
+                        const actionsDiv = document.createElement('div');
+                        actionsDiv.className = 'center-actions';
+
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'btn-edit';
+                        editBtn.textContent = "Tarif o'zgartirish";
+                        editBtn.onclick = () => updateTariff(center.id);
+
+                        const freezeBtn = document.createElement('button');
+                        freezeBtn.className = 'btn-freeze';
+                        freezeBtn.textContent = freezeText;
+                        freezeBtn.onclick = () => toggleStatus(center.id, center.status);
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'btn-delete';
+                        deleteBtn.textContent = "O'chirish";
+                        deleteBtn.onclick = () => deleteCenter(center.id);
+
+                        actionsDiv.appendChild(editBtn);
+                        actionsDiv.appendChild(freezeBtn);
+                        actionsDiv.appendChild(deleteBtn);
+
+                        card.appendChild(infoDiv);
+                        card.appendChild(actionsDiv);
+                        elements.centersList.appendChild(card);
+                    });
+                } catch (error) {
+                    console.error('Error loading centers:', error);
+                    elements.centersList.innerHTML = '<p style="text-align:center;color:red;">Markazlarni yuklashda xatolik</p>';
+                }
+            }
+
+            // Modal functions
+            function openAddModal() {
+                elements.addModal.classList.add('active');
+                // Clear form
+                elements.centerName.value = '';
+                elements.centerPhone.value = '';
+                elements.centerPassword.value = '';
+                elements.centerPassword2.value = '';
+                elements.centerAddress.value = '';
+                elements.centerTariff.value = 'Pro';
+            }
+
+            function closeAddModal() {
+                elements.addModal.classList.remove('active');
+            }
+
+            // Create center
+            async function createCenter() {
+                const center = {
+                    name: elements.centerName.value,
+                    phone: elements.centerPhone.value,
+                    password: elements.centerPassword.value,
+                    password2: elements.centerPassword2.value,
+                    address: elements.centerAddress.value,
+                    tariff: elements.centerTariff.value
+                };
+
+                // Validation
+                if (!center.name || !center.phone || !center.password || !center.password2 || !center.address) {
+                    alert('Barcha maydonlarni to\'ldiring!');
+                    return;
+                }
+
+                if (center.password !== center.password2) {
+                    alert('Parollar mos kelmadi!');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE}/admin/centers`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(center)
+                    });
+
+                    if (response.ok) {
+                        closeAddModal();
+                        await loadDashboard();
+                        alert('Markaz muvaffaqiyatli yaratildi!');
+                    } else {
+                        const error = await response.json();
+                        alert(error.detail || 'Xatolik yuz berdi!');
+                    }
+                } catch (error) {
+                    console.error('Create center error:', error);
+                    alert('Xatolik yuz berdi!');
+                }
+            }
+
+            // Toggle center status
+            async function toggleStatus(centerId, currentStatus) {
+                const newStatus = currentStatus === 'active' ? 'frozen' : 'active';
+                const actionText = newStatus === 'active' ? 'faollashtirmoqchi' : 'muzlatmoqchi';
+
+                if (!confirm(`Rostdan ham markazni ${actionText}misiz?`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE}/admin/centers/${centerId}/status`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+
+                    if (response.ok) {
+                        await loadDashboard();
+                    } else {
+                        const error = await response.json();
+                        alert(error.detail || 'Xatolik yuz berdi!');
+                    }
+                } catch (error) {
+                    console.error('Toggle status error:', error);
+                    alert('Xatolik yuz berdi!');
+                }
+            }
+
+            // Update tariff
+            async function updateTariff(centerId) {
+                const tariff = prompt('Yangi tarif (Pro, Pro+, VIP):');
+                if (tariff && ['Pro', 'Pro+', 'VIP'].includes(tariff)) {
+                    try {
+                        const response = await fetch(`${API_BASE}/admin/centers/${centerId}/tariff`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ tariff })
+                        });
+
+                        if (response.ok) {
+                            await loadDashboard();
+                            alert('Tarif muvaffaqiyatli o\'zgartirildi!');
+                        } else {
+                            const error = await response.json();
+                            alert(error.detail || 'Xatolik yuz berdi!');
+                        }
+                    } catch (error) {
+                        console.error('Update tariff error:', error);
+                        alert('Xatolik yuz berdi!');
+                    }
+                } else if (tariff) {
+                    alert('Noto\'g\'ri tarif! Faqat: Pro, Pro+, VIP');
+                }
+            }
+
+            // Delete center
+            async function deleteCenter(centerId) {
+                if (!confirm('Rostdan ham o\'chirmoqchimisiz? Bu amalni qaytarib bo\'lmaydi!')) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE}/admin/centers/${centerId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        await loadDashboard();
+                        alert('Markaz o\'chirildi!');
+                    } else {
+                        const error = await response.json();
+                        alert(error.detail || 'Xatolik yuz berdi!');
+                    }
+                } catch (error) {
+                    console.error('Delete center error:', error);
+                    alert('Xatolik yuz berdi!');
+                }
+            }
+
+            // Event listeners
+            document.getElementById('loginBtn1').addEventListener('click', login1);
+            document.getElementById('loginBtn2').addEventListener('click', login2);
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('addCenterBtn').addEventListener('click', openAddModal);
+            document.getElementById('cancelModalBtn').addEventListener('click', closeAddModal);
+            document.getElementById('submitCenterBtn').addEventListener('click', createCenter);
+
+            // Enter key support
+            elements.password1.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login1();
+            });
+            elements.password2.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login2();
+            });
+
+            // Close modal on outside click
+            elements.addModal.addEventListener('click', (e) => {
+                if (e.target === elements.addModal) {
+                    closeAddModal();
+                }
+            });
+
+            // Make functions available globally for onclick in dynamically created elements
+            window.updateTariff = updateTariff;
+            window.toggleStatus = toggleStatus;
+            window.deleteCenter = deleteCenter;
+        })();
+    </script>
 </body>
 
 </html>
