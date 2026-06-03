@@ -1374,7 +1374,7 @@ async def admin_panel_page():
                         actionsDiv.className = 'center-actions';
                         const editBtn = document.createElement('button');
                         editBtn.className = 'btn-edit';
-                        editBtn.textContent = 'Tarif o\'zgartirish';
+                        editBtn.textContent = "Tarif o'zgartirish";
                         editBtn.onclick = (function(id) { return function() { updateTariff(id); }; })(center.id);
                         const freezeBtn = document.createElement('button');
                         freezeBtn.className = 'btn-freeze';
