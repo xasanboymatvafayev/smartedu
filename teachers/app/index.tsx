@@ -18,7 +18,6 @@ export default function LoginScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState('');
-  const [testCode, setTestCode] = useState('');
 
   useEffect(() => { checkLogin(); }, []);
 
@@ -48,10 +47,9 @@ export default function LoginScreen() {
         } catch (err) { /* Continue to verification */ }
       }
       const response = await axios.post(`${API_URL}/api/teacher/request-code`, { phone });
-      setTestCode(response.data.code);
       Alert.alert(
         'Telegram Kod',
-        `Bot orqali kod oling: https://t.me/SmartEduVerificationBot\n\nTest uchun: ${response.data.code}`,
+        "Telegram botimizga o'ting va tasdiqlash kodini oling:\nhttps://t.me/SmartEduVerificationBot",
         [{ text: 'OK' }]
       );
       setStep('verify');
@@ -113,7 +111,6 @@ export default function LoginScreen() {
               <TouchableOpacity style={styles.telegramButton} onPress={() => Linking.openURL('https://t.me/SmartEduVerificationBot')}>
                 <Text style={styles.telegramButtonText}>🤖 SmartEduVerificationBot</Text>
               </TouchableOpacity>
-              <Text style={styles.testCodeText}>Test kod: {testCode}</Text>
               <TextInput style={styles.input} placeholder="6 raqamli kod" value={code} onChangeText={setCode} keyboardType="numeric" maxLength={6} />
               <TouchableOpacity style={styles.loginButton} onPress={handleVerifyCode} disabled={loading}>
                 <Text style={styles.loginButtonText}>{loading ? 'Tekshirilmoqda...' : 'Tasdiqlash'}</Text>
@@ -185,7 +182,6 @@ const styles = StyleSheet.create({
   loginButtonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
   telegramButton: { backgroundColor: '#0088cc', padding: 14, borderRadius: 10, alignItems: 'center', marginBottom: 14 },
   telegramButtonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
-  testCodeText: { textAlign: 'center', color: '#999', fontSize: 13, marginBottom: 14 },
   backLink: { alignItems: 'center', marginTop: 14 },
   backLinkText: { color: '#1a6b3c', fontSize: 14 },
   versionText: { textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 24 },
