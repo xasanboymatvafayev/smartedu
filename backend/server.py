@@ -977,566 +977,634 @@ async def admin_panel_page():
     """Admin panel web page"""
     html_content = """
     <!DOCTYPE html>
-    <html lang="uz">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Katta Admin Panel</title>
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-            }
-            .container {
-                max-width: 1400px;
-                margin: 0 auto;
-                padding: 20px;
-            }
-            .login-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-            }
-            .login-box {
-                background: white;
-                padding: 40px;
-                border-radius: 10px;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-                width: 100%;
-                max-width: 400px;
-            }
-            .login-box h2 {
-                margin-bottom: 30px;
-                color: #333;
-                text-align: center;
-            }
-            .form-group {
-                margin-bottom: 20px;
-            }
-            .form-group label {
-                display: block;
-                margin-bottom: 5px;
-                color: #555;
-                font-weight: 500;
-            }
-            .form-group input {
-                width: 100%;
-                padding: 12px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                font-size: 14px;
-            }
-            .btn {
-                width: 100%;
-                padding: 12px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border: none;
-                border-radius: 5px;
-                font-size: 16px;
-                cursor: pointer;
-                transition: transform 0.2s;
-            }
-            .btn:hover {
-                transform: translateY(-2px);
-            }
-            .error {
-                color: #e74c3c;
-                font-size: 14px;
-                margin-top: 10px;
-                text-align: center;
-            }
-            .dashboard {
-                display: none;
-            }
-            .dashboard.active {
-                display: block;
-            }
-            .header {
-                background: white;
-                padding: 20px;
-                border-radius: 10px;
-                margin-bottom: 20px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .header h1 {
-                color: #333;
-            }
-            .logout-btn {
-                padding: 10px 20px;
-                background: #e74c3c;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-            }
-            .stats {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 20px;
-                margin-bottom: 30px;
-            }
-            .stat-card {
-                background: white;
-                padding: 30px;
-                border-radius: 10px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            .stat-card h3 {
-                color: #666;
-                font-size: 14px;
-                margin-bottom: 10px;
-            }
-            .stat-card p {
-                color: #333;
-                font-size: 32px;
-                font-weight: bold;
-            }
-            .centers-section {
-                background: white;
-                padding: 30px;
-                border-radius: 10px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            .section-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 20px;
-            }
-            .section-header h2 {
-                color: #333;
-            }
-            .add-btn {
-                padding: 10px 20px;
-                background: #2ecc71;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-            }
-            .centers-list {
-                display: grid;
-                gap: 15px;
-            }
-            .center-card {
-                border: 1px solid #ddd;
-                padding: 20px;
-                border-radius: 5px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .center-info h3 {
-                color: #333;
-                margin-bottom: 5px;
-            }
-            .center-info p {
-                color: #666;
-                font-size: 14px;
-            }
-            .center-actions button {
-                margin-left: 10px;
-                padding: 8px 15px;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 14px;
-            }
-            .btn-edit {
-                background: #3498db;
-                color: white;
-            }
-            .btn-freeze {
-                background: #f39c12;
-                color: white;
-            }
-            .btn-delete {
-                background: #e74c3c;
-                color: white;
-            }
-            .modal {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                justify-content: center;
-                align-items: center;
-                z-index: 1000;
-            }
-            .modal.active {
-                display: flex;
-            }
-            .modal-content {
-                background: white;
-                padding: 30px;
-                border-radius: 10px;
-                width: 90%;
-                max-width: 500px;
-                max-height: 90vh;
-                overflow-y: auto;
-            }
-            .modal-content h2 {
-                margin-bottom: 20px;
-                color: #333;
-            }
-            .modal-actions {
-                display: flex;
-                gap: 10px;
-                margin-top: 20px;
-            }
-            .modal-actions button {
-                flex: 1;
-                padding: 12px;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 16px;
-            }
-            .btn-cancel {
-                background: #95a5a6;
-                color: white;
-            }
-            .btn-submit {
-                background: #2ecc71;
-                color: white;
-            }
-            .tariff-badge {
-                display: inline-block;
-                padding: 5px 10px;
-                border-radius: 3px;
-                font-size: 12px;
-                font-weight: bold;
-                margin-left: 10px;
-            }
-            .tariff-pro {
-                background: #3498db;
-                color: white;
-            }
-            .tariff-proplus {
-                background: #9b59b6;
-                color: white;
-            }
-            .tariff-vip {
-                background: #f39c12;
-                color: white;
-            }
-            .status-badge {
-                display: inline-block;
-                padding: 5px 10px;
-                border-radius: 3px;
-                font-size: 12px;
-                font-weight: bold;
-                margin-left: 10px;
-            }
-            .status-active {
-                background: #2ecc71;
-                color: white;
-            }
-            .status-frozen {
-                background: #e74c3c;
-                color: white;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="loginContainer" class="login-container">
-            <div class="login-box">
-                <h2>🔐 Katta Admin Panel</h2>
-                <div id="loginStep1">
-                    <div class="form-group">
-                        <label>Telefon raqam</label>
-                        <input type="text" id="phone" placeholder="+998 90 123 45 67">
-                    </div>
-                    <div class="form-group">
-                        <label>Parol 1</label>
-                        <input type="password" id="password1" placeholder="Birinchi parol">
-                    </div>
-                    <button class="btn" onclick="login1()">Kirish</button>
-                    <div id="error1" class="error"></div>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katta Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-box h2 {
+            margin-bottom: 30px;
+            color: #333;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            color: #333;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .centers-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            color: #333;
+        }
+
+        .add-btn {
+            padding: 10px 20px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .centers-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .center-card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .center-info h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .center-info p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .center-actions button {
+            margin-left: 10px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-freeze {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-submit {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .tariff-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .tariff-pro {
+            background: #3498db;
+            color: white;
+        }
+
+        .tariff-proplus {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .tariff-vip {
+            background: #f39c12;
+            color: white;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .status-active {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .status-frozen {
+            background: #e74c3c;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loginContainer" class="login-container">
+        <div class="login-box">
+            <h2>🔐 Katta Admin Panel</h2>
+            <div id="loginStep1">
+                <div class="form-group">
+                    <label>Telefon raqam</label>
+                    <input type="text" id="phone" placeholder="+998 90 123 45 67">
                 </div>
-                <div id="loginStep2" style="display:none;">
-                    <div class="form-group">
-                        <label>Parol 2</label>
-                        <input type="password" id="password2" placeholder="Ikkinchi parol">
-                    </div>
-                    <button class="btn" onclick="login2()">Tasdiqlash</button>
-                    <div id="error2" class="error"></div>
+                <div class="form-group">
+                    <label>Parol 1</label>
+                    <input type="password" id="password1" placeholder="Birinchi parol">
                 </div>
+                <button class="btn" onclick="login1()">Kirish</button>
+                <div id="error1" class="error"></div>
+            </div>
+            <div id="loginStep2" style="display:none;">
+                <div class="form-group">
+                    <label>Parol 2</label>
+                    <input type="password" id="password2" placeholder="Ikkinchi parol">
+                </div>
+                <button class="btn" onclick="login2()">Tasdiqlash</button>
+                <div id="error2" class="error"></div>
             </div>
         </div>
+    </div>
 
-        <div id="dashboard" class="dashboard">
-            <div class="container">
-                <div class="header">
-                    <h1>📊 Admin Dashboard</h1>
-                    <button class="logout-btn" onclick="logout()">Chiqish</button>
+    <div id="dashboard" class="dashboard">
+        <div class="container">
+            <div class="header">
+                <h1>📊 Admin Dashboard</h1>
+                <button class="logout-btn" onclick="logout()">Chiqish</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Jami O'quv Markazlar</h3>
+                    <p id="totalCenters">0</p>
                 </div>
-
-                <div class="stats">
-                    <div class="stat-card">
-                        <h3>Jami O'quv Markazlar</h3>
-                        <p id="totalCenters">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Faol Markazlar</h3>
-                        <p id="activeCenters">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Jami O'quvchilar</h3>
-                        <p id="totalStudents">0</p>
-                    </div>
+                <div class="stat-card">
+                    <h3>Faol Markazlar</h3>
+                    <p id="activeCenters">0</p>
                 </div>
-
-                <div class="centers-section">
-                    <div class="section-header">
-                        <h2>O'quv Markazlar</h2>
-                        <button class="add-btn" onclick="openAddModal()">+ Yangi Markaz</button>
-                    </div>
-                    <div id="centersList" class="centers-list"></div>
+                <div class="stat-card">
+                    <h3>Jami O'quvchilar</h3>
+                    <p id="totalStudents">0</p>
                 </div>
             </div>
-        </div>
 
-        <!-- Add Center Modal -->
-        <div id="addModal" class="modal">
-            <div class="modal-content">
-                <h2>Yangi O'quv Markaz</h2>
-                <div class="form-group">
-                    <label>Nomi</label>
-                    <input type="text" id="centerName" placeholder="Masalan: HDP Academy">
+            <div class="centers-section">
+                <div class="section-header">
+                    <h2>O'quv Markazlar</h2>
+                    <button class="add-btn" onclick="openAddModal()">+ Yangi Markaz</button>
                 </div>
-                <div class="form-group">
-                    <label>Telefon</label>
-                    <input type="text" id="centerPhone" placeholder="+998 90 123 45 67">
-                </div>
-                <div class="form-group">
-                    <label>Parol (Boss login uchun)</label>
-                    <input type="password" id="centerPassword" placeholder="Parol">
-                </div>
-                <div class="form-group">
-                    <label>Ikkinchi Parol</label>
-                    <input type="password" id="centerPassword2" placeholder="Ikkinchi parol">
-                </div>
-                <div class="form-group">
-                    <label>Manzil</label>
-                    <input type="text" id="centerAddress" placeholder="Manzil">
-                </div>
-                <div class="form-group">
-                    <label>Tarif</label>
-                    <select id="centerTariff" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:5px;">
-                        <option value="Pro">Pro - 200,000 so'm (100 o'quvchi, 5 guruh, 5 ustoz)</option>
-                        <option value="Pro+">Pro+ - 500,000 so'm (300 o'quvchi, 50 guruh, 50 ustoz)</option>
-                        <option value="VIP">VIP - Cheksiz</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button class="btn-cancel" onclick="closeAddModal()">Bekor qilish</button>
-                    <button class="btn-submit" onclick="createCenter()">Yaratish</button>
-                </div>
+                <div id="centersList" class="centers-list"></div>
             </div>
         </div>
+    </div>
 
-        <script>
-            const API_BASE = '/api';
-            let currentPhone = '';
+    <!-- Add Center Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h2>Yangi O'quv Markaz</h2>
+            <div class="form-group">
+                <label>Nomi</label>
+                <input type="text" id="centerName" placeholder="Masalan: HDP Academy">
+            </div>
+            <div class="form-group">
+                <label>Telefon</label>
+                <input type="text" id="centerPhone" placeholder="+998 90 123 45 67">
+            </div>
+            <div class="form-group">
+                <label>Parol (Boss login uchun)</label>
+                <input type="password" id="centerPassword" placeholder="Parol">
+            </div>
+            <div class="form-group">
+                <label>Ikkinchi Parol</label>
+                <input type="password" id="centerPassword2" placeholder="Ikkinchi parol">
+            </div>
+            <div class="form-group">
+                <label>Manzil</label>
+                <input type="text" id="centerAddress" placeholder="Manzil">
+            </div>
+            <div class="form-group">
+                <label>Tarif</label>
+                <select id="centerTariff" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:5px;">
+                    <option value="Pro">Pro - 200,000 so'm (100 o'quvchi, 5 guruh, 5 ustoz)</option>
+                    <option value="Pro+">Pro+ - 500,000 so'm (300 o'quvchi, 50 guruh, 50 ustoz)</option>
+                    <option value="VIP">VIP - Cheksiz</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeAddModal()">Bekor qilish</button>
+                <button class="btn-submit" onclick="createCenter()">Yaratish</button>
+            </div>
+        </div>
+    </div>
 
-            async function login1() {
-                const phone = document.getElementById('phone').value;
-                const password1 = document.getElementById('password1').value;
-                
-                try {
-                    const response = await fetch(`${API_BASE}/admin/login`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({phone, password: password1})
-                    });
-                    
-                    if (response.ok) {
-                        currentPhone = phone;
-                        document.getElementById('loginStep1').style.display = 'none';
-                        document.getElementById('loginStep2').style.display = 'block';
-                    } else {
-                        document.getElementById('error1').textContent = 'Login xato!';
-                    }
-                } catch (error) {
-                    document.getElementById('error1').textContent = 'Xatolik yuz berdi!';
+    <script>
+        const API_BASE = '/api';
+        let currentPhone = '';
+
+        async function login1() {
+            const phone = document.getElementById('phone').value;
+            const password1 = document.getElementById('password1').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, password: password1 })
+                });
+
+                if (response.ok) {
+                    currentPhone = phone;
+                    document.getElementById('loginStep1').style.display = 'none';
+                    document.getElementById('loginStep2').style.display = 'block';
+                } else {
+                    document.getElementById('error1').textContent = 'Login xato!';
                 }
+            } catch (error) {
+                document.getElementById('error1').textContent = 'Xatolik yuz berdi!';
             }
+        }
 
-            async function login2() {
-                const password2 = document.getElementById('password2').value;
-                
-                try {
-                    const response = await fetch(`${API_BASE}/admin/login2`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            phone: currentPhone, 
-                            password2: password2
-                        })
-                    
-                    if (response.ok) {
-                        document.getElementById('loginContainer').style.display = 'none';
-                        document.getElementById('dashboard').classList.add('active');
-                        loadDashboard();
-                    } else {
-                        document.getElementById('error2').textContent = 'Ikkinchi parol xato!';
-                    }
-                } catch (error) {
-                    document.getElementById('error2').textContent = 'Xatolik yuz berdi!';
+        async function login2() {
+            const password2 = document.getElementById('password2').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/login2`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone: currentPhone,
+                        password2: password2
+                    })
+                }); // ✅ MANAVI YOPILMAY QOLGAN QAVS TUZATILDI
+
+                if (response.ok) {
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('dashboard').classList.add('active');
+                    loadDashboard();
+                } else {
+                    document.getElementById('error2').textContent = 'Ikkinchi parol xato!';
                 }
+            } catch (error) {
+                document.getElementById('error2').textContent = 'Xatolik yuz berdi!';
             }
+        }
 
-            function logout() {
-                document.getElementById('loginContainer').style.display = 'flex';
-                document.getElementById('dashboard').classList.remove('active');
-                document.getElementById('loginStep1').style.display = 'block';
-                document.getElementById('loginStep2').style.display = 'none';
+        function logout() {
+            document.getElementById('loginContainer').style.display = 'flex';
+            document.getElementById('dashboard').classList.remove('active');
+            document.getElementById('loginStep1').style.display = 'block';
+            document.getElementById('loginStep2').style.display = 'none';
+        }
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/dashboard`);
+                const data = await response.json();
+
+                document.getElementById('totalCenters').textContent = data.total_centers;
+                document.getElementById('activeCenters').textContent = data.active_centers;
+                document.getElementById('totalStudents').textContent = data.total_students;
+
+                loadCenters();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
             }
+        }
 
-            async function loadDashboard() {
-                try {
-                    const response = await fetch(`${API_BASE}/admin/dashboard`);
-                    const data = await response.json();
-                    
-                    document.getElementById('totalCenters').textContent = data.total_centers;
-                    document.getElementById('activeCenters').textContent = data.active_centers;
-                    document.getElementById('totalStudents').textContent = data.total_students;
-                    
-                    loadCenters();
-                } catch (error) {
-                    console.error('Error loading dashboard:', error);
+        async function loadCenters() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/centers`);
+                const centers = await response.json();
+
+                const centersList = document.getElementById('centersList');
+                centersList.innerHTML = '';
+
+                centers.forEach(center => {
+                    const card = document.createElement('div');
+                    card.className = 'center-card';
+
+                    const tariffClass = center.tariff ? center.tariff.toLowerCase().replace('+', 'plus') : '';
+                    const statusText = center.status === 'active' ? 'Faol' : 'Muzlatilgan';
+                    const freezeText = center.status === 'active' ? 'Muzlatish' : 'Faollashtirish';
+
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'center-info';
+
+                    const h3 = document.createElement('h3');
+                    h3.textContent = center.name + ' ';
+
+                    const tariffBadge = document.createElement('span');
+                    tariffBadge.className = 'tariff-badge tariff-' + tariffClass;
+                    tariffBadge.textContent = center.tariff;
+                    h3.appendChild(tariffBadge);
+                    h3.appendChild(document.createTextNode(' '));
+
+                    const statusBadge = document.createElement('span');
+                    statusBadge.className = 'status-badge status-' + center.status;
+                    statusBadge.textContent = statusText;
+                    h3.appendChild(statusBadge);
+
+                    const p = document.createElement('p');
+                    p.textContent = '📞 ' + center.phone + ' | 📍 ' + center.address;
+
+                    infoDiv.appendChild(h3);
+                    infoDiv.appendChild(p);
+
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'center-actions';
+
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn-edit';
+                    editBtn.textContent = "Tarif o'zgartirish";
+                    editBtn.onclick = function () { updateTariff(center.id); };
+
+                    const freezeBtn = document.createElement('button');
+                    freezeBtn.className = 'btn-freeze';
+                    freezeBtn.textContent = freezeText;
+                    freezeBtn.onclick = function () { toggleStatus(center.id, center.status); };
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-delete';
+                    deleteBtn.textContent = "O'chirish";
+                    deleteBtn.onclick = function () { deleteCenter(center.id); };
+
+                    actionsDiv.appendChild(editBtn);
+                    actionsDiv.appendChild(freezeBtn);
+                    actionsDiv.appendChild(deleteBtn);
+
+                    card.appendChild(infoDiv);
+                    card.appendChild(actionsDiv);
+                    centersList.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading centers:', error);
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('active');
+        }
+
+        async function createCenter() {
+            const center = {
+                name: document.getElementById('centerName').value,
+                phone: document.getElementById('centerPhone').value,
+                password: document.getElementById('centerPassword').value,
+                password2: document.getElementById('centerPassword2').value,
+                address: document.getElementById('centerAddress').value,
+                tariff: document.getElementById('centerTariff').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/centers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(center)
+                });
+
+                if (response.ok) {
+                    closeAddModal();
+                    loadDashboard();
+                    alert('Markaz muvaffaqiyatli yaratildi!');
                 }
+            } catch (error) {
+                alert('Xatolik yuz berdi!');
             }
+        }
 
-            async function loadCenters() {
-                try {
-                    const response = await fetch(`${API_BASE}/admin/centers`);
-                    const centers = await response.json();
-                    
-                    const centersList = document.getElementById('centersList');
-                    centersList.innerHTML = '';
-                    
-                    centers.forEach(center => {
-                        const card = document.createElement('div');
-                        card.className = 'center-card';
-                        
-                        const tariffClass = center.tariff ? center.tariff.toLowerCase().replace('+', 'plus') : '';
-                        const statusText = center.status === 'active' ? 'Faol' : 'Muzlatilgan';
-                        const freezeText = center.status === 'active' ? 'Muzlatish' : 'Faollashtirish';
-                        
-                        const infoDiv = document.createElement('div');
-                        infoDiv.className = 'center-info';
-                        
-                        const h3 = document.createElement('h3');
-                        h3.textContent = center.name + ' ';
-                        
-                        const tariffBadge = document.createElement('span');
-                        tariffBadge.className = 'tariff-badge tariff-' + tariffClass;
-                        tariffBadge.textContent = center.tariff;
-                        h3.appendChild(tariffBadge);
-                        h3.appendChild(document.createTextNode(' '));
-                        
-                        const statusBadge = document.createElement('span');
-                        statusBadge.className = 'status-badge status-' + center.status;
-                        statusBadge.textContent = statusText;
-                        h3.appendChild(statusBadge);
-                        
-                        const p = document.createElement('p');
-                        p.textContent = '📞 ' + center.phone + ' | 📍 ' + center.address;
-                        
-                        infoDiv.appendChild(h3);
-                        infoDiv.appendChild(p);
-                        
-                        const actionsDiv = document.createElement('div');
-                        actionsDiv.className = 'center-actions';
-                        
-                        const editBtn = document.createElement('button');
-                        editBtn.className = 'btn-edit';
-                        editBtn.textContent = "Tarif o'zgartirish";
-                        editBtn.onclick = function() { updateTariff(center.id); };
-                        
-                        const freezeBtn = document.createElement('button');
-                        freezeBtn.className = 'btn-freeze';
-                        freezeBtn.textContent = freezeText;
-                        freezeBtn.onclick = function() { toggleStatus(center.id, center.status); };
-                        
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'btn-delete';
-                        deleteBtn.textContent = "O'chirish";
-                        deleteBtn.onclick = function() { deleteCenter(center.id); };
-                        
-                        actionsDiv.appendChild(editBtn);
-                        actionsDiv.appendChild(freezeBtn);
-                        actionsDiv.appendChild(deleteBtn);
-                        
-                        card.appendChild(infoDiv);
-                        card.appendChild(actionsDiv);
-                        centersList.appendChild(card);
-                    });
-                } catch (error) {
-                    console.error('Error loading centers:', error);
+        async function toggleStatus(centerId, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'frozen' : 'active';
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/centers/${centerId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    loadDashboard();
                 }
+            } catch (error) {
+                alert('Xatolik yuz berdi!');
             }
+        }
 
-            function openAddModal() {
-                document.getElementById('addModal').classList.add('active');
-            }
-
-            function closeAddModal() {
-                document.getElementById('addModal').classList.remove('active');
-            }
-
-            async function createCenter() {
-                const center = {
-                    name: document.getElementById('centerName').value,
-                    phone: document.getElementById('centerPhone').value,
-                    password: document.getElementById('centerPassword').value,
-                    password2: document.getElementById('centerPassword2').value,
-                    address: document.getElementById('centerAddress').value,
-                    tariff: document.getElementById('centerTariff').value
-                };
-                
+        async function updateTariff(centerId) {
+            const tariff = prompt('Yangi tarif (Pro, Pro+, VIP):');
+            if (tariff && ['Pro', 'Pro+', 'VIP'].includes(tariff)) {
                 try {
-                    const response = await fetch(`${API_BASE}/admin/centers`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(center)
-                    });
-                    
-                    if (response.ok) {
-                        closeAddModal();
-                        loadDashboard();
-                        alert('Markaz muvaffaqiyatli yaratildi!');
-                    }
-                } catch (error) {
-                    alert('Xatolik yuz berdi!');
-                }
-            }
-
-            async function toggleStatus(centerId, currentStatus) {
-                const newStatus = currentStatus === 'active' ? 'frozen' : 'active';
-                
-                try {
-                    const response = await fetch(`${API_BASE}/admin/centers/${centerId}/status`, {
+                    const response = await fetch(`${API_BASE}/admin/centers/${centerId}/tariff`, {
                         method: 'PUT',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({status: newStatus})
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tariff })
                     });
-                    
+
                     if (response.ok) {
                         loadDashboard();
                     }
@@ -1544,44 +1612,27 @@ async def admin_panel_page():
                     alert('Xatolik yuz berdi!');
                 }
             }
+        }
 
-            async function updateTariff(centerId) {
-                const tariff = prompt('Yangi tarif (Pro, Pro+, VIP):');
-                if (tariff && ['Pro', 'Pro+', 'VIP'].includes(tariff)) {
-                    try {
-                        const response = await fetch(`${API_BASE}/admin/centers/${centerId}/tariff`, {
-                            method: 'PUT',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({tariff})
-                        });
-                        
-                        if (response.ok) {
-                            loadDashboard();
-                        }
-                    } catch (error) {
-                        alert('Xatolik yuz berdi!');
+        async function deleteCenter(centerId) {
+            if (confirm('Rostdan ham o\'chirmoqchimisiz?')) {
+                try {
+                    const response = await fetch(`${API_BASE}/admin/centers/${centerId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        loadDashboard();
                     }
+                } catch (error) {
+                    alert('Xatolik yuz berdi!');
                 }
             }
+        }
+    </script>
+</body>
 
-            async function deleteCenter(centerId) {
-                if (confirm('Rostdan ham o\'chirmoqchimisiz?')) {
-                    try {
-                        const response = await fetch(`${API_BASE}/admin/centers/${centerId}`, {
-                            method: 'DELETE'
-                        });
-                        
-                        if (response.ok) {
-                            loadDashboard();
-                        }
-                    } catch (error) {
-                        alert('Xatolik yuz berdi!');
-                    }
-                }
-            }
-        </script>
-    </body>
-    </html>
+</html>
     """
     return HTMLResponse(content=html_content)
 
