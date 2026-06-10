@@ -17,10 +17,8 @@
   .form-group label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
   .form-group input { width: 100%; padding: 12px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 15px; background: #f9f9f9; outline: none; }
   .form-group input:focus { border-color: #7b1a1a; background: #fff; }
-  .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 8px; }
+  .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; }
   .btn-dark-red { background: #7b1a1a; color: #fff; }
-  .btn-telegram { background: #0088cc; color: #fff; }
-  .btn-back { background: none; border: none; color: #7b1a1a; font-size: 14px; cursor: pointer; margin-top: 8px; }
   .version-text { text-align: center; color: #aaa; font-size: 12px; margin-top: 20px; }
 
   #app-screen { display: none; flex-direction: column; min-height: 100vh; }
@@ -85,51 +83,27 @@
 </head>
 <body>
 
-<!-- AUTH -->
+<!-- AUTH SCREEN - FAQAT PAROL ORQALI KIRISH -->
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo">👨‍👩‍👧</div>
     <h1 class="auth-title">SmartEdu Parents</h1>
     <p class="auth-subtitle">Ota-onalar uchun panel</p>
 
-    <div id="step-login">
-      <div class="form-group">
-        <label>Telefon raqam</label>
-        <input type="tel" id="login-phone" placeholder="+998 xx xxx xx xx">
-      </div>
-      <div class="form-group">
-        <label>Parol (agar bor bo'lsa)</label>
-        <input type="password" id="login-password" placeholder="Parolingizni kiriting">
-      </div>
-      <button class="btn btn-dark-red" onclick="handleLogin()">Kirish / Kod yuborish</button>
+    <div class="form-group">
+      <label>📱 Telefon raqam</label>
+      <input type="tel" id="login-phone" placeholder="+998 xx xxx xx xx">
     </div>
-
-    <div id="step-verify" style="display:none">
-      <p style="text-align:center;color:#555;margin-bottom:16px;font-size:14px">Telegram botdan kod oling</p>
-      <a href="https://t.me/SmartEduVerificationBot" target="_blank">
-        <button class="btn btn-telegram">🤖 SmartEduVerificationBot</button>
-      </a>
-      <div class="form-group" style="margin-top:12px">
-        <label>6 raqamli kod</label>
-        <input type="number" id="verify-code" maxlength="6" placeholder="Kodni kiriting">
-      </div>
-      <button class="btn btn-dark-red" onclick="handleVerify()">Tasdiqlash</button>
-      <div style="text-align:center"><button class="btn-back" onclick="goBack()">← Orqaga</button></div>
+    <div class="form-group">
+      <label>🔐 Parol</label>
+      <input type="password" id="login-password" placeholder="Parolingizni kiriting">
     </div>
-
-    <div id="step-password" style="display:none">
-      <div class="form-group">
-        <label>Yangi parol</label>
-        <input type="password" id="new-password" placeholder="Kamida 4 belgi">
-      </div>
-      <button class="btn btn-dark-red" onclick="handleSetPassword()">Saqlash va Kirish</button>
-    </div>
-
+    <button class="btn btn-dark-red" onclick="handleLogin()">🚀 Kirish</button>
     <p class="version-text">SmartEdu v1.0 • Parents</p>
   </div>
 </div>
 
-<!-- APP -->
+<!-- APP SCREEN -->
 <div id="app-screen">
   <div class="header">
     <div class="header-info">
@@ -200,91 +174,54 @@
 <script>
 const API_URL = window.location.origin;
 let studentId = localStorage.getItem('studentId');
-let userId = '';
-let rankData = {};
 let childName = '';
 
 window.onload = () => {
-  if (studentId && localStorage.getItem('userRole') === 'parent') showApp();
+  if (studentId && localStorage.getItem('userRole') === 'parent') {
+    showApp();
+  }
 };
 
 async function handleLogin() {
   const phone = document.getElementById('login-phone').value.trim();
   const password = document.getElementById('login-password').value.trim();
-  if (!phone) { showToast('Telefon raqamni kiriting', 'error'); return; }
+  
+  if (!phone || !password) {
+    showToast('Telefon raqam va parolni kiriting', 'error');
+    return;
+  }
+  
   try {
-    if (password) {
-      try {
-        const res = await fetch(`${API_URL}/api/student/login`, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ phone, password, user_type: 'parent' })
-        });
-        const data = await res.json();
-        if (data.success) {
-          localStorage.setItem('userRole','parent');
-          localStorage.setItem('studentId', data.student_id);
-          localStorage.setItem('studentName', data.name);
-          studentId = data.student_id;
-          showApp(); return;
-        }
-      } catch(e) {}
-    }
-    await fetch(`${API_URL}/api/student/request-code`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ phone, user_type: 'parent' })
-    });
-    document.getElementById('step-login').style.display = 'none';
-    document.getElementById('step-verify').style.display = 'block';
-  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
-}
-
-async function handleVerify() {
-  const phone = document.getElementById('login-phone').value.trim();
-  const code = document.getElementById('verify-code').value.trim();
-  try {
-    const res = await fetch(`${API_URL}/api/student/verify-code`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ phone, code, user_type: 'parent' })
-    });
-    const data = await res.json();
-    userId = data.student_id;
-    if (data.has_password) { showToast('Parolingiz bilan kiring', 'success'); goBack(); }
-    else { document.getElementById('step-verify').style.display = 'none'; document.getElementById('step-password').style.display = 'block'; }
-  } catch(e) { showToast('Kod noto\'g\'ri', 'error'); }
-}
-
-async function handleSetPassword() {
-  const phone = document.getElementById('login-phone').value.trim();
-  const password = document.getElementById('new-password').value.trim();
-  if (!password || password.length < 4) { showToast('Parol kamida 4 belgi', 'error'); return; }
-  try {
-    await fetch(`${API_URL}/api/student/set-password`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ student_id: userId, password })
-    });
     const res = await fetch(`${API_URL}/api/student/login`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, password, user_type: 'parent' })
     });
+    
     const data = await res.json();
-    localStorage.setItem('userRole','parent');
-    localStorage.setItem('studentId', data.student_id);
-    localStorage.setItem('studentName', data.name);
-    studentId = data.student_id;
-    showApp();
-  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
-}
-
-function goBack() {
-  document.getElementById('step-verify').style.display = 'none';
-  document.getElementById('step-password').style.display = 'none';
-  document.getElementById('step-login').style.display = 'block';
+    
+    if (data.success) {
+      localStorage.setItem('userRole', 'parent');
+      localStorage.setItem('studentId', data.student_id);
+      localStorage.setItem('studentName', data.name);
+      studentId = data.student_id;
+      showApp();
+      showToast('Xush kelibsiz!', 'success');
+    } else {
+      showToast(data.detail || 'Telefon yoki parol xato', 'error');
+    }
+  } catch(e) {
+    showToast('Server bilan bog\'lanishda xatolik', 'error');
+  }
 }
 
 function handleLogout() {
-  localStorage.clear(); studentId = null;
+  localStorage.clear();
+  studentId = null;
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-phone').value = '';
+  document.getElementById('login-password').value = '';
 }
 
 function showApp() {
@@ -300,61 +237,79 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.nav-tab').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + tab).classList.add('active');
   if (btn) btn.classList.add('active');
-  if (tab === 'calendar') loadCalendar();
+  if (tab === 'dashboard') loadDashboard();
+  else if (tab === 'calendar') loadCalendar();
   else if (tab === 'ranking') loadRanking();
 }
 
 async function loadDashboard() {
+  if (!studentId) return;
   try {
-    const [dashRes, calRes] = await Promise.all([
-      fetch(`${API_URL}/api/student/dashboard/${studentId}`),
-      fetch(`${API_URL}/api/student/calendar/${studentId}`)
-    ]);
+    const dashRes = await fetch(`${API_URL}/api/student/dashboard/${studentId}`);
+    if (!dashRes.ok) throw new Error('Dashboard error');
     const d = await dashRes.json();
+    
+    const calRes = await fetch(`${API_URL}/api/student/calendar/${studentId}`);
     const cal = await calRes.json();
-    document.getElementById('p-balance').textContent = (d.balance||0).toLocaleString();
-    document.getElementById('p-coins').textContent = d.coins||0;
-    document.getElementById('p-group').textContent = d.group_name||'—';
-    document.getElementById('p-attendance').textContent = d.attendance_count||0;
-    document.getElementById('p-phone').textContent = cal.phone||'—';
+    
+    document.getElementById('p-balance').textContent = (d.balance || 0).toLocaleString();
+    document.getElementById('p-coins').textContent = d.coins || 0;
+    document.getElementById('p-group').textContent = d.group_name || '—';
+    document.getElementById('p-attendance').textContent = d.attendance_count || 0;
+    document.getElementById('p-phone').textContent = cal.phone || '—';
     document.getElementById('p-time').textContent = (cal.time_start && cal.time_end) ? `${cal.time_start} – ${cal.time_end}` : '—';
-  } catch(e) {}
+  } catch(e) {
+    console.error('Dashboard error:', e);
+  }
 }
 
 async function loadCalendar() {
+  if (!studentId) return;
   const el = document.getElementById('calendar-content');
+  el.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
   try {
     const res = await fetch(`${API_URL}/api/student/calendar/${studentId}`);
+    if (!res.ok) throw new Error('Calendar error');
     const data = await res.json();
+    
     const today = new Date();
     const year = today.getFullYear();
     const month = today.getMonth();
-    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
     let firstDay = new Date(year, month, 1).getDay();
     firstDay = firstDay === 0 ? 6 : firstDay - 1;
 
-    const monthNames = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
-    const dayNames = ['Du','Se','Ch','Pa','Ju','Sh','Ya'];
-    const attendedDates = new Set(data.attended_dates || []);
-    const absentDates = new Set(data.absent_dates || []);
+    const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+    const dayNames = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'];
     const scheduleDays = data.schedule_days || [];
+    
+    // Create attended and absent sets from attendance array
+    const attendedDates = new Set();
+    if (data.attendance && data.attendance.length) {
+      data.attendance.forEach(a => {
+        if (a.status === 1 && a.date) attendedDates.add(a.date);
+      });
+    }
 
     let html = `<div class="month-title">${monthNames[month]} ${year}</div><div class="cal-grid">`;
     dayNames.forEach(d => html += `<div class="cal-header">${d}</div>`);
-    for (let i=0; i<firstDay; i++) html += `<div class="cal-cell"></div>`;
-    for (let day=1; day<=daysInMonth; day++) {
+    for (let i = 0; i < firstDay; i++) html += `<div class="cal-cell"></div>`;
+    for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const dow = date.getDay() === 0 ? 7 : date.getDay();
       const dateStr = date.toISOString().split('T')[0];
       const isClass = scheduleDays.includes(dow);
       const isAttended = attendedDates.has(dateStr);
-      const isAbsent = absentDates.has(dateStr);
       const isToday = day === today.getDate();
+      
       let cls = 'cal-cell';
-      if (isAttended) cls += ' attended';
-      else if (isAbsent) cls += ' absent';
-      else if (isClass && date < today) cls += ' absent';
-      else if (isClass) cls += ' class-day';
+      if (isAttended) {
+        cls += ' attended';
+      } else if (isClass && date < today) {
+        cls += ' absent';
+      } else if (isClass) {
+        cls += ' class-day';
+      }
       if (isToday) cls += ' today';
       html += `<div class="${cls}">${day}</div>`;
     }
@@ -364,22 +319,34 @@ async function loadCalendar() {
       <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#555"><div style="width:14px;height:14px;border-radius:4px;background:#fee2e2;border:1px solid #e74c3c"></div>Kelmadi</div>
       <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#555"><div style="width:14px;height:14px;border-radius:4px;background:#fde8e8"></div>Dars kuni</div>
     </div>`;
-    if (data.group_name) html += `
+    
+    if (data.group_name) {
+      html += `
       <div class="info-card" style="margin-top:16px">
         <div class="info-row"><span class="info-label">📚 Guruh</span><span class="info-value">${data.group_name}</span></div>
-        <div class="info-row"><span class="info-label">🕐 Vaqt</span><span class="info-value">${data.time_start||'—'} – ${data.time_end||'—'}</span></div>
+        <div class="info-row"><span class="info-label">🕐 Vaqt</span><span class="info-value">${data.time_start || '—'} – ${data.time_end || '—'}</span></div>
       </div>`;
+    }
     el.innerHTML = html;
-  } catch(e) { el.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+  } catch(e) {
+    console.error('Calendar error:', e);
+    el.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>';
+  }
 }
 
+let rankData = { group_ranking: [], center_ranking: [], my_coins: 0 };
+
 async function loadRanking() {
+  if (!studentId) return;
   try {
     const res = await fetch(`${API_URL}/api/student/ranking/${studentId}`);
+    if (!res.ok) throw new Error('Ranking error');
     rankData = await res.json();
-    document.getElementById('p-my-coins').textContent = (rankData.my_coins||0) + ' 🪙';
+    document.getElementById('p-my-coins').textContent = (rankData.my_coins || 0) + ' 🪙';
     renderRanking('group');
-  } catch(e) {}
+  } catch(e) {
+    console.error('Ranking error:', e);
+  }
 }
 
 function switchRankTab(type, btn) {
@@ -391,17 +358,21 @@ function switchRankTab(type, btn) {
 function renderRanking(type) {
   const list = document.getElementById('ranking-list');
   const data = type === 'group' ? rankData.group_ranking : rankData.center_ranking;
-  if (!data || !data.length) { list.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px">Ma\'lumot yo\'q</div>'; return; }
-  const medals = ['🥇','🥈','🥉'];
-  list.innerHTML = data.map((s,i) => `
+  if (!data || !data.length) {
+    list.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px">Ma\'lumot yo\'q</div>';
+    return;
+  }
+  const medals = ['🥇', '🥈', '🥉'];
+  list.innerHTML = data.map((s, i) => `
     <div class="rank-card ${s.name === childName ? 'is-my-child' : ''}">
-      <div class="rank-num">${medals[i]||i+1}</div>
+      <div class="rank-num">${medals[i] || (i + 1)}</div>
       <div class="rank-name">${s.name} ${s.name === childName ? '👈' : ''}</div>
       <div class="rank-coins">🪙 ${s.coins}</div>
-    </div>`).join('');
+    </div>
+  `).join('');
 }
 
-function showToast(msg, type='success') {
+function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = `toast toast-${type} show`;
