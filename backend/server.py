@@ -50,7 +50,14 @@ verification_codes = {}
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
+# Logging configuration - BU KODNING ENG BOSHIDA BO'LISHI KERAK
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
+# Keyin qolgan importlar va kod...
 # ==================== MODELS ====================
 
 class EducationCenter(BaseModel):
@@ -130,18 +137,7 @@ class Transaction(BaseModel):
     description: str
     date: datetime = Field(default_factory=datetime.utcnow)
 
-# ==================== HELPER FUNCTIONS ====================
-
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
-
-def generate_verification_code() -> str:
-    return ''.join(random.choices(string.digits, k=6))
-
-async def send_telegram_code(phone: str, code: str):
+async def send_telegram_code(phone: str, code: str) -> bool:
     """Send verification code via Telegram bot - stores phone->chat_id mapping"""
     try:
         # Store code with phone number
@@ -151,55 +147,42 @@ async def send_telegram_code(phone: str, code: str):
         }
         
         if not telegram_bot:
-            logger.warning("Telegram bot not configured (TELEGRAM_BOT_TOKEN missing)")
+            logger.warning(f"Telegram bot not configured for {phone}, code stored only")
             return True  # Still allow login without telegram in dev
         
         # Check if user already has telegram chat_id linked
         user_link = await db.telegram_links.find_one({"phone": phone})
-        if user_link:
+        if user_link and user_link.get('chat_id'):
             try:
                 await telegram_bot.send_message(
                     chat_id=user_link['chat_id'],
-                    text=f"🔐 Tasdiqlash kodi: {code}\n\n✅ Ushbu kodni ilovaga kiriting.\n\nKod 5 daqiqada eskirsadi."
+                    text=f"🔐 Tasdiqlash kodi: {code}\n\n✅ Ushbu kodni ilovaga kiriting.\n\n⚠️ Kod 5 daqiqada eskiradi."
                 )
+                logger.info(f"Telegram code sent to {phone}")
                 return True
-            except Exception as e:
-                logging.error(f"Telegram send error: {e}")
-        return True  # Still return true even if not linked yet (code is stored)
+            except TelegramError as e:
+                logger.error(f"Telegram send error for {phone}: {e}")
+                return True  # Code stored, user can use if they link later
+        else:
+            logger.info(f"No telegram link for {phone}, code stored for later")
+            return True  # Code stored, will be sent when user links telegram
+            
     except Exception as e:
-        logging.error(f"Telegram error: {e}")
+        logger.error(f"Telegram error in send_telegram_code for {phone}: {e}")
         return False
 
-def get_daily_fee(monthly_fee: float, schedule_days: List[int]) -> float:
-    """Calculate daily fee based on monthly fee and schedule"""
-    classes_per_month = len(schedule_days) * 4  # Approximate
-    if classes_per_month == 0:
-        return 0
-    return monthly_fee / classes_per_month
 
-def serialize_doc(doc):
-    """Convert MongoDB document to JSON serializable format"""
-    if doc is None:
-        return None
-    if isinstance(doc, list):
-        return [serialize_doc(item) for item in doc]
-    if isinstance(doc, dict):
-        result = {}
-        for key, value in doc.items():
-            if key == '_id':
-                result['id'] = str(value)
-            elif isinstance(value, ObjectId):
-                result[key] = str(value)
-            elif isinstance(value, datetime):
-                result[key] = value.isoformat()
-            elif isinstance(value, dict):
-                result[key] = serialize_doc(value)
-            elif isinstance(value, list):
-                result[key] = [serialize_doc(item) if isinstance(item, dict) else item for item in value]
-            else:
-                result[key] = value
-        return result
-    return doc
+async def send_telegram_message(chat_id: int, text: str) -> bool:
+    """Send message to Telegram chat"""
+    try:
+        if not telegram_bot:
+            logger.warning("Telegram bot not configured")
+            return False
+        await telegram_bot.send_message(chat_id=chat_id, text=text)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send telegram message to {chat_id}: {e}")
+        return False
 
 # ==================== ADMIN PANEL ENDPOINTS ====================
 
@@ -1532,60 +1515,98 @@ async def admin_panel_page():
 async def telegram_webhook(update: dict = Body(...)):
     """Telegram bot webhook for receiving messages"""
     try:
+        if not telegram_bot:
+            logger.error("Telegram webhook called but bot not configured!")
+            return {"ok": False, "error": "Bot not configured"}
+        
         message = update.get('message', {})
         chat = message.get('chat', {})
         text = message.get('text', '')
         chat_id = chat.get('id')
         
+        if not chat_id:
+            return {"ok": False, "error": "No chat_id"}
+        
+        logger.info(f"Received telegram message from {chat_id}: {text[:50]}")
+        
         if text == '/start':
-            await telegram_bot.send_message(
-                chat_id=chat_id,
-                text="👋 Salom! EDU TIZIM botiga xush kelibsiz.\n\n"
-                     "Iltimos, telefon raqamingizni yuboring:\n"
-                     "Misol: 998901234567\n\n"
-                     "Bu raqam orqali tasdiqlash kodi olasiz."
+            await send_telegram_message(
+                chat_id,
+                "👋 Salom! EDU TIZIM botiga xush kelibsiz!\n\n"
+                "📱 Iltimos, telefon raqamingizni yuboring:\n"
+                "`998901234567`\n\n"
+                "⚠️ Faqat 998 bilan boshlanuvchi 12 xonali raqam!"
             )
-        elif text and text.startswith('998') and len(text) == 12:
-            # Phone number received
-            phone = text
-            await db.telegram_links.update_one(
-                {"phone": phone},
-                {"$set": {"phone": phone, "chat_id": chat_id, "updated_at": datetime.utcnow()}},
-                upsert=True
-            )
-            
-            # Check if there's pending verification code
-            stored = verification_codes.get(phone)
-            if stored:
-                await telegram_bot.send_message(
-                    chat_id=chat_id,
-                    text=f"🔐 Tasdiqlash kodingiz: {stored['code']}\n\n✅ Ushbu kodni ilovaga kiriting."
+        elif text and text.startswith('998') and len(text) >= 12:
+            # Clean phone number
+            import re
+            phone = re.sub(r'\D', '', text)
+            if len(phone) == 12 and phone.startswith('998'):
+                # Save or update link
+                await db.telegram_links.update_one(
+                    {"phone": phone},
+                    {"$set": {"phone": phone, "chat_id": chat_id, "updated_at": datetime.utcnow()}},
+                    upsert=True
                 )
+                logger.info(f"Linked phone {phone} with chat {chat_id}")
+                
+                # Check if there's pending verification code
+                stored = verification_codes.get(phone)
+                if stored and stored.get('code'):
+                    await send_telegram_message(
+                        chat_id,
+                        f"🔐 Tasdiqlash kodingiz: `{stored['code']}`\n\n"
+                        f"✅ Ushbu kodni ilovaga kiriting.\n\n"
+                        f"⚠️ Kod 5 daqiqada eskiradi."
+                    )
+                else:
+                    await send_telegram_message(
+                        chat_id,
+                        f"✅ Telefon raqamingiz `{phone}` saqlandi!\n\n"
+                        f"Endi ilovada login qiling, kod sizga avtomatik yuboriladi."
+                    )
             else:
-                await telegram_bot.send_message(
-                    chat_id=chat_id,
-                    text=f"✅ Telefon raqamingiz ({phone}) saqlandi.\n\nEndi ilovada login qiling, kod sizga avtomatik yuboriladi."
+                await send_telegram_message(
+                    chat_id,
+                    "❌ Noto'g'ri format!\n\n"
+                    "Iltimos, 998 bilan boshlanuvchi 12 xonali raqam yuboring:\n"
+                    "`998901234567`"
                 )
         else:
-            await telegram_bot.send_message(
-                chat_id=chat_id,
-                text="❓ Tushunmadim. Iltimos telefon raqamingizni yuboring:\nMisol: 998901234567"
+            await send_telegram_message(
+                chat_id,
+                "❓ Tushunmadim.\n\n"
+                "Iltimos, telefon raqamingizni yuboring:\n"
+                "`998901234567`\n\n"
+                "Yoki /start buyrug'ini bosing."
             )
         
         return {"ok": True}
     except Exception as e:
-        logging.error(f"Webhook error: {e}")
-        return {"ok": False}
+        logger.error(f"Webhook error: {e}", exc_info=True)
+        return {"ok": False, "error": str(e)}
 
-@api_router.get("/telegram/setup")
-async def setup_telegram_webhook(url: str):
-    """Setup telegram webhook URL"""
-    try:
-        await telegram_bot.set_webhook(url=f"{url}/api/telegram/webhook")
-        return {"success": True, "message": f"Webhook set to {url}/api/telegram/webhook"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+# ==================== SIMPLE TEST ENDPOINT ====================
 
+@api_router.get("/test")
+async def test_api():
+    """Simple test endpoint to check if API is working"""
+    return {
+        "status": "ok",
+        "message": "API is working",
+        "telegram_bot_configured": telegram_bot is not None,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for Railway"""
+    return {
+        "status": "healthy",
+        "mongodb": "connected" if client else "disconnected",
+        "telegram_bot": "configured" if telegram_bot else "not configured"
+    }
 # Include router
 app.include_router(api_router)
 
