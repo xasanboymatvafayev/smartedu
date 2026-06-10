@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartEdu Students</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
+
+  /* Auth */
+  #auth-screen { min-height: 100vh; background: linear-gradient(135deg, #e74c3c, #c0392b); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .auth-card { background: #fff; border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .auth-logo { text-align: center; font-size: 60px; margin-bottom: 10px; }
+  .auth-title { text-align: center; font-size: 24px; font-weight: 700; color: #e74c3c; margin-bottom: 6px; }
+  .auth-subtitle { text-align: center; color: #888; margin-bottom: 28px; font-size: 14px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
+  .form-group input { width: 100%; padding: 12px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 15px; background: #f9f9f9; outline: none; }
+  .form-group input:focus { border-color: #e74c3c; background: #fff; }
+  .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .btn-red { background: #e74c3c; color: #fff; }
+  .btn-telegram { background: #0088cc; color: #fff; }
+  .btn-back { background: none; border: none; color: #e74c3c; font-size: 14px; cursor: pointer; margin-top: 12px; }
+  .version-text { text-align: center; color: #aaa; font-size: 12px; margin-top: 20px; }
+
+  /* App */
+  #app-screen { display: none; flex-direction: column; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; padding: 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header-info h2 { font-size: 22px; font-weight: 700; }
+  .header-info p { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+  .logout-btn { background: rgba(255,255,255,0.2); border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+
+  /* Bottom nav */
+  .bottom-nav { background: #fff; border-top: 1px solid #e0e0e0; display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; }
+  .nav-tab { flex: 1; padding: 12px 4px 8px; text-align: center; cursor: pointer; border: none; background: none; transition: color .2s; color: #aaa; font-size: 11px; }
+  .nav-tab .tab-icon { font-size: 22px; display: block; margin-bottom: 3px; }
+  .nav-tab.active { color: #e74c3c; font-weight: 600; }
+
+  .content { flex: 1; padding: 20px; padding-bottom: 80px; overflow-y: auto; }
+
+  /* Pages */
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-title { font-size: 20px; font-weight: 700; color: #222; margin-bottom: 20px; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: linear-gradient(135deg, #e74c3c, #c0392b); border-radius: 14px; padding: 18px; color: #fff; text-align: center; }
+  .stat-value { font-size: 24px; font-weight: 700; }
+  .stat-label { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+  .info-card { background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 14px; }
+  .info-text { font-size: 14px; color: #555; padding: 6px 0; border-bottom: 1px solid #f5f5f5; }
+  .info-text:last-child { border-bottom: none; }
+
+  /* Menu grid */
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .menu-item { background: #fff; border-radius: 14px; padding: 24px 16px; text-align: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.07); transition: transform .1s; }
+  .menu-item:active { transform: scale(0.97); }
+  .menu-icon { font-size: 36px; margin-bottom: 8px; }
+  .menu-title { font-size: 14px; font-weight: 600; color: #333; }
+
+  /* Ranking */
+  .tabs { display: flex; background: #fff; border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+  .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: none; cursor: pointer; font-size: 14px; color: #888; }
+  .tab-btn.active { background: #e74c3c; color: #fff; font-weight: 600; }
+  .rank-card { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .rank-num { font-size: 20px; font-weight: 700; color: #e74c3c; min-width: 30px; }
+  .rank-name { flex: 1; font-size: 15px; font-weight: 600; color: #222; }
+  .rank-coins { font-size: 14px; color: #888; }
+
+  /* Calendar */
+  .month-title { font-size: 18px; font-weight: 700; color: #333; text-align: center; margin-bottom: 16px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-header { font-size: 12px; font-weight: 600; color: #888; text-align: center; padding: 6px 0; }
+  .cal-cell { height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #333; cursor: pointer; }
+  .cal-cell.empty { background: transparent; }
+  .cal-cell.class-day { background: #fde8e8; color: #e74c3c; }
+  .cal-cell.attended { background: #e74c3c; color: #fff; }
+  .cal-cell.today { border: 2px solid #e74c3c; }
+  .legend { display: flex; gap: 14px; margin-top: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #555; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+
+  /* Store */
+  .coins-bar { background: linear-gradient(135deg, #e74c3c, #c0392b); border-radius: 14px; padding: 16px 20px; color: #fff; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .coins-label { font-size: 14px; opacity: 0.85; }
+  .coins-value { font-size: 24px; font-weight: 700; }
+  .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .store-item { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .store-img { width: 100%; height: 140px; object-fit: cover; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+  .store-body { padding: 12px; }
+  .store-name { font-size: 14px; font-weight: 600; color: #222; }
+  .store-price { font-size: 13px; color: #888; margin: 4px 0 8px; }
+  .order-btn { width: 100%; padding: 8px; background: #e74c3c; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .order-btn:disabled { background: #ccc; }
+
+  /* Profile */
+  .profile-card { background: linear-gradient(135deg, #e74c3c, #c0392b); border-radius: 16px; padding: 28px; text-align: center; color: #fff; margin-bottom: 20px; }
+  .avatar { width: 72px; height: 72px; border-radius: 36px; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; margin: 0 auto 12px; }
+  .profile-name { font-size: 22px; font-weight: 700; }
+  .profile-phone { font-size: 14px; opacity: 0.85; margin-top: 6px; }
+
+  /* Loading */
+  .loading-text { text-align: center; color: #888; padding: 40px; font-size: 16px; }
+  .empty-state { text-align: center; color: #aaa; padding: 40px 20px; }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 90px; right: 20px; padding: 12px 20px; border-radius: 10px; color: #fff; font-size: 14px; z-index: 9999; opacity: 0; transition: opacity .3s; }
+  .toast.show { opacity: 1; }
+  .toast-success { background: #27ae60; }
+  .toast-error { background: #e74c3c; }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">🎓</div>
+    <h1 class="auth-title">SmartEdu Students</h1>
+    <p class="auth-subtitle">O'quvchilar uchun panel</p>
+
+    <div id="step-login">
+      <div class="form-group">
+        <label>Telefon raqam</label>
+        <input type="tel" id="login-phone" placeholder="+998 xx xxx xx xx">
+      </div>
+      <div class="form-group">
+        <label>Parol (agar bor bo'lsa)</label>
+        <input type="password" id="login-password" placeholder="Parolingizni kiriting">
+      </div>
+      <button class="btn btn-red" onclick="handleLogin()">Kirish / Kod yuborish</button>
+    </div>
+
+    <div id="step-verify" style="display:none">
+      <p style="text-align:center;color:#555;margin-bottom:16px;font-size:14px">Telegram botdan kod oling</p>
+      <a href="https://t.me/SmartEduVerificationBot" target="_blank">
+        <button class="btn btn-telegram" style="margin-bottom:12px">🤖 SmartEduVerificationBot</button>
+      </a>
+      <div class="form-group">
+        <label>6 raqamli kod</label>
+        <input type="number" id="verify-code" maxlength="6" placeholder="Kodni kiriting">
+      </div>
+      <button class="btn btn-red" onclick="handleVerify()">Tasdiqlash</button>
+      <div style="text-align:center"><button class="btn-back" onclick="goBack()">← Orqaga</button></div>
+    </div>
+
+    <div id="step-password" style="display:none">
+      <div class="form-group">
+        <label>Yangi parol</label>
+        <input type="password" id="new-password" placeholder="Kamida 4 belgi">
+      </div>
+      <button class="btn btn-red" onclick="handleSetPassword()">Saqlash va Kirish</button>
+    </div>
+
+    <p class="version-text">SmartEdu v1.0 • Students</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="header">
+    <div class="header-info">
+      <h2>🎓 <span id="student-name-display">O'quvchi</span></h2>
+      <p>O'quvchi Paneli</p>
+    </div>
+    <button class="logout-btn" onclick="handleLogout()">🚪</button>
+  </div>
+
+  <div class="content">
+    <!-- Dashboard -->
+    <div id="page-dashboard" class="page active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="s-balance">0</div>
+          <div class="stat-label">Balans (so'm)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="s-coins">0</div>
+          <div class="stat-label">🪙 Coinlar</div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-text" id="s-group">📚 Guruh: —</div>
+        <div class="info-text" id="s-attendance">✅ Qatnashgan darslar: —</div>
+      </div>
+      <div class="menu-grid">
+        <div class="menu-item" onclick="switchTab('calendar')">
+          <div class="menu-icon">📅</div>
+          <div class="menu-title">Kalendar</div>
+        </div>
+        <div class="menu-item" onclick="switchTab('ranking')">
+          <div class="menu-icon">🏆</div>
+          <div class="menu-title">Reyting</div>
+        </div>
+        <div class="menu-item" onclick="switchTab('store')">
+          <div class="menu-icon">🛒</div>
+          <div class="menu-title">Do'kon</div>
+        </div>
+        <div class="menu-item" onclick="switchTab('profile')">
+          <div class="menu-icon">👤</div>
+          <div class="menu-title">Profil</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div id="page-calendar" class="page">
+      <h2 class="page-title">📅 Kalendar</h2>
+      <div id="calendar-content"><div class="loading-text">Yuklanmoqda...</div></div>
+    </div>
+
+    <!-- Ranking -->
+    <div id="page-ranking" class="page">
+      <h2 class="page-title">🏆 Reyting</h2>
+      <div class="info-card" style="text-align:center;margin-bottom:16px">
+        <div style="font-size:13px;color:#888">Mening Coinlarim</div>
+        <div style="font-size:28px;font-weight:700;color:#e74c3c" id="my-coins-display">0 🪙</div>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchRankTab('group', this)">Guruh</button>
+        <button class="tab-btn" onclick="switchRankTab('center', this)">Markaz</button>
+      </div>
+      <div id="ranking-list"><div class="loading-text">Yuklanmoqda...</div></div>
+    </div>
+
+    <!-- Store -->
+    <div id="page-store" class="page">
+      <div class="coins-bar">
+        <div class="coins-label">Mening Coinlarim</div>
+        <div class="coins-value">🪙 <span id="store-coins">0</span></div>
+      </div>
+      <div class="store-grid" id="store-grid"><div class="loading-text">Yuklanmoqda...</div></div>
+    </div>
+
+    <!-- Profile -->
+    <div id="page-profile" class="page">
+      <h2 class="page-title">👤 Profil</h2>
+      <div id="profile-content"><div class="loading-text">Yuklanmoqda...</div></div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-tab active" onclick="switchTab('dashboard', this)">
+      <span class="tab-icon">🏠</span>Bosh
+    </button>
+    <button class="nav-tab" onclick="switchTab('calendar', this)">
+      <span class="tab-icon">📅</span>Kalendar
+    </button>
+    <button class="nav-tab" onclick="switchTab('ranking', this)">
+      <span class="tab-icon">🏆</span>Reyting
+    </button>
+    <button class="nav-tab" onclick="switchTab('store', this)">
+      <span class="tab-icon">🛒</span>Do'kon
+    </button>
+    <button class="nav-tab" onclick="switchTab('profile', this)">
+      <span class="tab-icon">👤</span>Profil
+    </button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API_URL = window.location.origin;
+let studentId = localStorage.getItem('studentId');
+let userId = '';
+let currentStep = 'login';
+let rankData = { group_ranking: [], center_ranking: [], my_coins: 0 };
+
+window.onload = () => {
+  if (studentId && localStorage.getItem('userRole') === 'student') showApp();
+};
+
+async function handleLogin() {
+  const phone = document.getElementById('login-phone').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+  if (!phone) { showToast('Telefon raqamni kiriting', 'error'); return; }
+
+  try {
+    if (password) {
+      try {
+        const res = await fetch(`${API_URL}/api/student/login`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ phone, password, user_type: 'student' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('userRole','student');
+          localStorage.setItem('studentId', data.student_id);
+          localStorage.setItem('studentName', data.name);
+          studentId = data.student_id;
+          showApp(); return;
+        }
+      } catch(e) {}
+    }
+    await fetch(`${API_URL}/api/student/request-code`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone, user_type: 'student' })
+    });
+    document.getElementById('step-login').style.display = 'none';
+    document.getElementById('step-verify').style.display = 'block';
+    currentStep = 'verify';
+  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
+}
+
+async function handleVerify() {
+  const phone = document.getElementById('login-phone').value.trim();
+  const code = document.getElementById('verify-code').value.trim();
+  if (!code) { showToast('Kodni kiriting', 'error'); return; }
+  try {
+    const res = await fetch(`${API_URL}/api/student/verify-code`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone, code, user_type: 'student' })
+    });
+    const data = await res.json();
+    userId = data.student_id;
+    if (data.has_password) {
+      showToast('Parolingiz bilan kiring', 'success');
+      goBack();
+    } else {
+      document.getElementById('step-verify').style.display = 'none';
+      document.getElementById('step-password').style.display = 'block';
+    }
+  } catch(e) { showToast('Kod noto\'g\'ri', 'error'); }
+}
+
+async function handleSetPassword() {
+  const phone = document.getElementById('login-phone').value.trim();
+  const password = document.getElementById('new-password').value.trim();
+  if (!password || password.length < 4) { showToast('Parol kamida 4 belgi', 'error'); return; }
+  try {
+    await fetch(`${API_URL}/api/student/set-password`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ student_id: userId, password })
+    });
+    const res = await fetch(`${API_URL}/api/student/login`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone, password, user_type: 'student' })
+    });
+    const data = await res.json();
+    localStorage.setItem('userRole','student');
+    localStorage.setItem('studentId', data.student_id);
+    localStorage.setItem('studentName', data.name);
+    studentId = data.student_id;
+    showApp();
+  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
+}
+
+function goBack() {
+  document.getElementById('step-verify').style.display = 'none';
+  document.getElementById('step-password').style.display = 'none';
+  document.getElementById('step-login').style.display = 'block';
+}
+
+function handleLogout() {
+  localStorage.clear(); studentId = null;
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'flex';
+  document.getElementById('student-name-display').textContent = localStorage.getItem('studentName') || 'O\'quvchi';
+  loadDashboard();
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (tab === 'dashboard') loadDashboard();
+  else if (tab === 'calendar') loadCalendar();
+  else if (tab === 'ranking') loadRanking();
+  else if (tab === 'store') loadStore();
+  else if (tab === 'profile') loadProfile();
+}
+
+async function loadDashboard() {
+  try {
+    const res = await fetch(`${API_URL}/api/student/dashboard/${studentId}`);
+    const d = await res.json();
+    document.getElementById('s-balance').textContent = (d.balance||0).toLocaleString();
+    document.getElementById('s-coins').textContent = d.coins||0;
+    document.getElementById('s-group').textContent = '📚 Guruh: ' + (d.group_name||'—');
+    document.getElementById('s-attendance').textContent = '✅ Qatnashgan darslar: ' + (d.attendance_count||0);
+  } catch(e) {}
+}
+
+async function loadCalendar() {
+  const el = document.getElementById('calendar-content');
+  try {
+    const res = await fetch(`${API_URL}/api/student/calendar/${studentId}`);
+    const data = await res.json();
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    let firstDay = new Date(year, month, 1).getDay();
+    firstDay = firstDay === 0 ? 6 : firstDay - 1;
+
+    const monthNames = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+    const dayNames = ['Du','Se','Ch','Pa','Ju','Sh','Ya'];
+    const attendedDates = new Set(data.attended_dates || []);
+    const scheduleDays = data.schedule_days || [];
+
+    let calHTML = `<div class="month-title">${monthNames[month]} ${year}</div><div class="cal-grid">`;
+    dayNames.forEach(d => calHTML += `<div class="cal-header">${d}</div>`);
+    for (let i=0; i<firstDay; i++) calHTML += `<div class="cal-cell empty"></div>`;
+    for (let day=1; day<=daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dow = date.getDay() === 0 ? 7 : date.getDay();
+      const dateStr = date.toISOString().split('T')[0];
+      const isClass = scheduleDays.includes(dow);
+      const isAttended = attendedDates.has(dateStr);
+      const isToday = day === today.getDate();
+      let cls = 'cal-cell';
+      if (isAttended) cls += ' attended';
+      else if (isClass) cls += ' class-day';
+      if (isToday) cls += ' today';
+      calHTML += `<div class="${cls}">${day}</div>`;
+    }
+    calHTML += `</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>Keldi</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fde8e8;border:1px solid #e74c3c"></div>Dars kuni</div>
+    </div>`;
+
+    if (data.group_name) calHTML += `<div class="info-card" style="margin-top:16px"><div class="info-text">📚 Guruh: ${data.group_name}</div><div class="info-text">🕐 ${data.time_start||'—'} – ${data.time_end||'—'}</div></div>`;
+    el.innerHTML = calHTML;
+  } catch(e) { el.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+}
+
+async function loadRanking() {
+  try {
+    const res = await fetch(`${API_URL}/api/student/ranking/${studentId}`);
+    rankData = await res.json();
+    document.getElementById('my-coins-display').textContent = (rankData.my_coins||0) + ' 🪙';
+    renderRanking('group');
+  } catch(e) {}
+}
+
+function switchRankTab(type, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRanking(type);
+}
+
+function renderRanking(type) {
+  const list = document.getElementById('ranking-list');
+  const data = type === 'group' ? rankData.group_ranking : rankData.center_ranking;
+  if (!data || !data.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">🏆</div>Ma\'lumot yo\'q</div>'; return; }
+  const medals = ['🥇','🥈','🥉'];
+  list.innerHTML = data.map((s,i) => `
+    <div class="rank-card">
+      <div class="rank-num">${medals[i]||i+1}</div>
+      <div class="rank-name">${s.name}</div>
+      <div class="rank-coins">🪙 ${s.coins}</div>
+    </div>`).join('');
+}
+
+async function loadStore() {
+  const grid = document.getElementById('store-grid');
+  grid.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
+  try {
+    const profRes = await fetch(`${API_URL}/api/student/profile/${studentId}`);
+    const prof = await profRes.json();
+    const myCoins = prof.coins || 0;
+    document.getElementById('store-coins').textContent = myCoins;
+    const itemRes = await fetch(`${API_URL}/api/student/store/${prof.center_id}`);
+    const items = await itemRes.json();
+    if (!items.length) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🛒</div>Mahsulotlar yo\'q</div>'; return; }
+    grid.innerHTML = items.map(item => `
+      <div class="store-item">
+        ${item.image_base64 
+          ? `<img src="${item.image_base64}" style="width:100%;height:140px;object-fit:cover">` 
+          : `<div class="store-img">🎁</div>`}
+        <div class="store-body">
+          <div class="store-name">${item.name}</div>
+          <div class="store-price">🪙 ${item.coin_price} coin</div>
+          <button class="order-btn" ${myCoins < item.coin_price ? 'disabled' : ''} onclick="orderItem('${item.id}','${item.name}',${item.coin_price})">
+            ${myCoins < item.coin_price ? 'Yetarli emas' : 'Buyurtma'}
+          </button>
+        </div>
+      </div>`).join('');
+  } catch(e) { grid.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+}
+
+async function orderItem(itemId, itemName, price) {
+  if (!confirm(`${itemName} ni ${price} coin uchun buyurtma berasizmi?`)) return;
+  try {
+    await fetch(`${API_URL}/api/student/store/order`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ student_id: studentId, item_id: itemId })
+    });
+    showToast('Buyurtma berildi! Ustozdan oling.', 'success');
+    loadStore();
+  } catch(e) { showToast('Buyurtma berishda xatolik', 'error'); }
+}
+
+async function loadProfile() {
+  const el = document.getElementById('profile-content');
+  try {
+    const res = await fetch(`${API_URL}/api/student/profile/${studentId}`);
+    const p = await res.json();
+    el.innerHTML = `
+      <div class="profile-card">
+        <div class="avatar">${(p.name||'?')[0].toUpperCase()}</div>
+        <div class="profile-name">${p.name}</div>
+        <div class="profile-phone">📞 ${p.phone}</div>
+      </div>
+      <div class="info-card">
+        <div class="info-text">📚 Guruh: ${p.group_name||'—'}</div>
+        <div class="info-text">💰 Balans: ${(p.balance||0).toLocaleString()} so'm</div>
+        <div class="info-text">🪙 Coinlar: ${p.coins||0}</div>
+        <div class="info-text">👨‍👩‍👦 Ota-ona: ${p.parent_phone||'—'}</div>
+        <div class="info-text">📌 Status: ${p.status||'active'}</div>
+      </div>`;
+  } catch(e) { el.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast toast-${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
