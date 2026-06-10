@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartEdu Moderator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
+  
+  /* Auth Screen */
+  #auth-screen { min-height: 100vh; background: linear-gradient(135deg, #2c3e7a, #1a5276); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .auth-card { background: #fff; border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .auth-logo { text-align: center; font-size: 60px; margin-bottom: 10px; }
+  .auth-title { text-align: center; font-size: 24px; font-weight: 700; color: #2c3e7a; margin-bottom: 6px; }
+  .auth-subtitle { text-align: center; color: #888; margin-bottom: 30px; font-size: 14px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
+  .form-group input, .form-group select { width: 100%; padding: 12px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 15px; background: #f9f9f9; outline: none; transition: border-color .2s; }
+  .form-group input:focus, .form-group select:focus { border-color: #2c3e7a; background: #fff; }
+  .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity .2s, transform .1s; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: #2c3e7a; color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-danger { background: #e74c3c; color: #fff; }
+  .btn-success { background: #27ae60; color: #fff; }
+  .btn-sm { padding: 8px 14px; font-size: 13px; width: auto; border-radius: 8px; }
+  .version-text { text-align: center; color: #aaa; font-size: 12px; margin-top: 20px; }
+
+  /* App Layout */
+  #app-screen { display: none; min-height: 100vh; flex-direction: column; }
+  .header { background: linear-gradient(135deg, #2c3e7a, #1a5276); color: #fff; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+  .header-title { font-size: 20px; font-weight: 700; }
+  .header-sub { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+  .logout-btn { background: rgba(255,255,255,0.2); border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .logout-btn:hover { background: rgba(255,255,255,0.3); }
+
+  /* Sidebar nav */
+  .layout { display: flex; flex: 1; }
+  .sidebar { width: 220px; background: #fff; border-right: 1px solid #e0e0e0; padding: 20px 0; flex-shrink: 0; min-height: calc(100vh - 65px); }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 20px; cursor: pointer; color: #555; font-size: 15px; transition: background .2s, color .2s; border-left: 3px solid transparent; }
+  .nav-item:hover { background: #f0f4ff; color: #2c3e7a; }
+  .nav-item.active { background: #eef2ff; color: #2c3e7a; font-weight: 600; border-left-color: #2c3e7a; }
+  .nav-icon { font-size: 20px; }
+  .content { flex: 1; padding: 24px; overflow-y: auto; }
+
+  /* Pages */
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-title { font-size: 22px; font-weight: 700; color: #222; margin-bottom: 20px; }
+
+  /* Stats cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); display: flex; align-items: center; gap: 14px; }
+  .stat-icon { font-size: 36px; }
+  .stat-value { font-size: 26px; font-weight: 700; color: #222; }
+  .stat-label { font-size: 13px; color: #888; }
+
+  /* Cards list */
+  .card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 14px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .card-title { font-size: 16px; font-weight: 600; color: #222; }
+  .card-detail { font-size: 13px; color: #666; margin-top: 4px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-orange { background: #ffedd5; color: #9a3412; }
+
+  /* Top bar with add button */
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .add-btn { background: #2c3e7a; color: #fff; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .add-btn:hover { opacity: 0.9; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 20px; padding: 28px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-size: 18px; font-weight: 700; color: #222; margin-bottom: 20px; }
+  .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-footer .btn { flex: 1; }
+  .btn-outline { background: #fff; border: 1.5px solid #ddd; color: #555; }
+
+  /* Attendance grid */
+  .student-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+  .student-row:last-child { border-bottom: none; }
+  .student-info { flex: 1; }
+  .student-name { font-size: 15px; font-weight: 600; color: #222; }
+  .student-phone { font-size: 13px; color: #888; }
+  .action-btns { display: flex; gap: 8px; }
+
+  /* Loading */
+  .loading-text { text-align: center; color: #888; padding: 40px; font-size: 16px; }
+  .empty-state { text-align: center; color: #aaa; padding: 60px 20px; }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* Days selector */
+  .days-selector { display: flex; gap: 8px; flex-wrap: wrap; }
+  .day-btn { padding: 8px 14px; border-radius: 8px; border: 1.5px solid #ddd; background: #fff; cursor: pointer; font-size: 13px; transition: all .2s; }
+  .day-btn.selected { background: #2c3e7a; color: #fff; border-color: #2c3e7a; }
+
+  /* Store items grid */
+  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .item-card { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .item-img { width: 100%; height: 160px; object-fit: cover; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+  .item-body { padding: 14px; }
+  .item-name { font-size: 15px; font-weight: 600; color: #222; }
+  .item-price { font-size: 13px; color: #666; margin-top: 4px; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .layout { flex-direction: column; }
+    .content { padding: 16px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Error toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 10px; color: #fff; font-size: 14px; z-index: 9999; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .toast-success { background: #27ae60; }
+  .toast-error { background: #e74c3c; }
+
+  /* Image preview */
+  .image-preview { width: 100px; height: 100px; object-fit: cover; border-radius: 10px; border: 1px solid #ddd; display: block; margin-top: 8px; }
+  .upload-btn { display: inline-block; padding: 8px 16px; background: #f0f0f0; border: 1.5px dashed #ccc; border-radius: 8px; cursor: pointer; font-size: 13px; color: #555; }
+  .upload-btn:hover { background: #e8e8e8; }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">🏫</div>
+    <h1 class="auth-title">SmartEdu Moderator</h1>
+    <p class="auth-subtitle">O'quv markaz boshqaruv paneli</p>
+    <div class="form-group">
+      <label>📱 Telefon raqam</label>
+      <input type="tel" id="login-phone" placeholder="+998 xx xxx xx xx">
+    </div>
+    <div class="form-group">
+      <label>🔐 Parol</label>
+      <input type="password" id="login-password" placeholder="Parolingizni kiriting">
+    </div>
+    <button class="btn btn-primary" onclick="handleLogin()">🚀 Kirish</button>
+    <p class="version-text">SmartEdu v1.0 • Moderator Panel</p>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <div class="header">
+    <div>
+      <div class="header-title">🏫 <span id="center-name-display">SmartEdu</span></div>
+      <div class="header-sub">Moderator Panel</div>
+    </div>
+    <button class="logout-btn" onclick="handleLogout()">🚪 Chiqish</button>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('rooms')">
+        <span class="nav-icon">🏠</span> Xonalar
+      </div>
+      <div class="nav-item" onclick="showPage('groups')">
+        <span class="nav-icon">👥</span> Guruhlar
+      </div>
+      <div class="nav-item" onclick="showPage('teachers')">
+        <span class="nav-icon">👨‍🏫</span> Ustozlar
+      </div>
+      <div class="nav-item" onclick="showPage('courses')">
+        <span class="nav-icon">📚</span> Kurslar
+      </div>
+      <div class="nav-item" onclick="showPage('students')">
+        <span class="nav-icon">🎓</span> O'quvchilar
+      </div>
+      <div class="nav-item" onclick="showPage('store')">
+        <span class="nav-icon">🛒</span> Do'kon
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <h2 class="page-title">📊 Dashboard</h2>
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><span class="stat-icon">🎓</span><div><div class="stat-value" id="stat-students">—</div><div class="stat-label">O'quvchilar</div></div></div>
+          <div class="stat-card"><span class="stat-icon">👥</span><div><div class="stat-value" id="stat-groups">—</div><div class="stat-label">Guruhlar</div></div></div>
+          <div class="stat-card"><span class="stat-icon">👨‍🏫</span><div><div class="stat-value" id="stat-teachers">—</div><div class="stat-label">Ustozlar</div></div></div>
+          <div class="stat-card"><span class="stat-icon">💰</span><div><div class="stat-value" id="stat-revenue">—</div><div class="stat-label">Oylik daromad</div></div></div>
+        </div>
+      </div>
+
+      <!-- ROOMS -->
+      <div id="page-rooms" class="page">
+        <div class="top-bar">
+          <h2 class="page-title" style="margin-bottom:0">🏠 Xonalar</h2>
+          <button class="add-btn" onclick="openModal('room-modal')">+ Qo'shish</button>
+        </div>
+        <div id="rooms-list"><div class="loading-text">Yuklanmoqda...</div></div>
+      </div>
+
+      <!-- GROUPS -->
+      <div id="page-groups" class="page">
+        <div class="top-bar">
+          <h2 class="page-title" style="margin-bottom:0">👥 Guruhlar</h2>
+          <button class="add-btn" onclick="openModal('group-modal')">+ Qo'shish</button>
+        </div>
+        <div id="groups-list"><div class="loading-text">Yuklanmoqda...</div></div>
+      </div>
+
+      <!-- TEACHERS -->
+      <div id="page-teachers" class="page">
+        <div class="top-bar">
+          <h2 class="page-title" style="margin-bottom:0">👨‍🏫 Ustozlar</h2>
+          <button class="add-btn" onclick="openModal('teacher-modal')">+ Qo'shish</button>
+        </div>
+        <div id="teachers-list"><div class="loading-text">Yuklanmoqda...</div></div>
+      </div>
+
+      <!-- COURSES -->
+      <div id="page-courses" class="page">
+        <div class="top-bar">
+          <h2 class="page-title" style="margin-bottom:0">📚 Kurslar</h2>
+          <button class="add-btn" onclick="openModal('course-modal')">+ Qo'shish</button>
+        </div>
+        <div id="courses-list"><div class="loading-text">Yuklanmoqda...</div></div>
+      </div>
+
+      <!-- STUDENTS -->
+      <div id="page-students" class="page">
+        <div class="top-bar">
+          <h2 class="page-title" style="margin-bottom:0">🎓 O'quvchilar</h2>
+          <button class="add-btn" onclick="openModal('student-modal')">+ Qo'shish</button>
+        </div>
+        <div id="students-list"><div class="loading-text">Yuklanmoqda...</div></div>
+      </div>
+
+      <!-- STORE -->
+      <div id="page-store" class="page">
+        <div class="top-bar">
+          <h2 class="page-title" style="margin-bottom:0">🛒 Do'kon</h2>
+          <div style="display:flex;gap:10px">
+            <button class="add-btn" style="background:#e74c3c" onclick="openModal('orders-modal')">📦 Buyurtmalar</button>
+            <button class="add-btn" onclick="openModal('store-modal')">+ Qo'shish</button>
+          </div>
+        </div>
+        <div id="store-items" class="items-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- Room Modal -->
+<div id="room-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 class="modal-title">🏠 Xona Qo'shish</h3>
+    <div class="form-group">
+      <label>Xona nomi</label>
+      <input type="text" id="room-name" placeholder="Masalan: Xona 1">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('room-modal')">Bekor</button>
+      <button class="btn btn-primary" onclick="createRoom()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Group Modal -->
+<div id="group-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 class="modal-title">👥 Guruh Qo'shish</h3>
+    <div class="form-group">
+      <label>Guruh nomi</label>
+      <input type="text" id="g-name" placeholder="Guruh nomi">
+    </div>
+    <div class="form-group">
+      <label>Fan / Yo'nalish</label>
+      <input type="text" id="g-subject" placeholder="Masalan: Matematika">
+    </div>
+    <div class="form-group">
+      <label>Xona</label>
+      <select id="g-room"></select>
+    </div>
+    <div class="form-group">
+      <label>Ustoz</label>
+      <select id="g-teacher"><option value="">— Tanlang —</option></select>
+    </div>
+    <div class="form-group">
+      <label>Boshlanish vaqti</label>
+      <input type="time" id="g-time-start">
+    </div>
+    <div class="form-group">
+      <label>Tugash vaqti</label>
+      <input type="time" id="g-time-end">
+    </div>
+    <div class="form-group">
+      <label>Dars kunlari</label>
+      <div class="days-selector" id="g-days">
+        <button class="day-btn" data-day="1" onclick="toggleDay(this)">Du</button>
+        <button class="day-btn" data-day="2" onclick="toggleDay(this)">Se</button>
+        <button class="day-btn" data-day="3" onclick="toggleDay(this)">Ch</button>
+        <button class="day-btn" data-day="4" onclick="toggleDay(this)">Pa</button>
+        <button class="day-btn" data-day="5" onclick="toggleDay(this)">Ju</button>
+        <button class="day-btn" data-day="6" onclick="toggleDay(this)">Sh</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('group-modal')">Bekor</button>
+      <button class="btn btn-primary" onclick="createGroup()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Teacher Modal -->
+<div id="teacher-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 class="modal-title">👨‍🏫 Ustoz Qo'shish</h3>
+    <div class="form-group">
+      <label>Ism Familiya</label>
+      <input type="text" id="t-name" placeholder="To'liq ism">
+    </div>
+    <div class="form-group">
+      <label>Telefon raqam</label>
+      <input type="tel" id="t-phone" placeholder="+998 xx xxx xx xx">
+    </div>
+    <div class="form-group">
+      <label>Parol</label>
+      <input type="password" id="t-password" placeholder="Kirish paroli">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('teacher-modal')">Bekor</button>
+      <button class="btn btn-primary" onclick="createTeacher()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Course Modal -->
+<div id="course-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 class="modal-title">📚 Kurs Qo'shish</h3>
+    <div class="form-group">
+      <label>Kurs nomi</label>
+      <input type="text" id="c-name" placeholder="Kurs nomi">
+    </div>
+    <div class="form-group">
+      <label>Oylik to'lov (so'm)</label>
+      <input type="number" id="c-fee" placeholder="Masalan: 500000">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('course-modal')">Bekor</button>
+      <button class="btn btn-primary" onclick="createCourse()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Student Modal -->
+<div id="student-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 class="modal-title">🎓 O'quvchi Qo'shish</h3>
+    <div class="form-group">
+      <label>Ism Familiya</label>
+      <input type="text" id="s-name" placeholder="To'liq ism">
+    </div>
+    <div class="form-group">
+      <label>Telefon raqam</label>
+      <input type="tel" id="s-phone" placeholder="+998 xx xxx xx xx">
+    </div>
+    <div class="form-group">
+      <label>Ota-ona telefoni</label>
+      <input type="tel" id="s-parent" placeholder="+998 xx xxx xx xx">
+    </div>
+    <div class="form-group">
+      <label>Guruh</label>
+      <select id="s-group"></select>
+    </div>
+    <div class="form-group">
+      <label>Kurs</label>
+      <select id="s-course"></select>
+    </div>
+    <div class="form-group">
+      <label>Parol</label>
+      <input type="password" id="s-password" placeholder="Kirish paroli">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('student-modal')">Bekor</button>
+      <button class="btn btn-primary" onclick="createStudent()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Balance Modal -->
+<div id="balance-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 class="modal-title">💰 Balans To'ldirish</h3>
+    <p id="balance-student-name" style="color:#555;margin-bottom:16px;"></p>
+    <div class="form-group">
+      <label>Miqdor (so'm)</label>
+      <input type="number" id="balance-amount" placeholder="Masalan: 500000">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('balance-modal')">Bekor</button>
+      <button class="btn btn-success" onclick="topupBalance()">To'ldirish</button>
+    </div>
+  </div>
+</div>
+
+<!-- Store Item Modal -->
+<div id="store-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 class="modal-title">🛒 Mahsulot Qo'shish</h3>
+    <div class="form-group">
+      <label>Mahsulot nomi</label>
+      <input type="text" id="st-name" placeholder="Mahsulot nomi">
+    </div>
+    <div class="form-group">
+      <label>Narxi (coin)</label>
+      <input type="number" id="st-price" placeholder="Masalan: 50">
+    </div>
+    <div class="form-group">
+      <label>Rasm</label>
+      <label class="upload-btn" for="st-image-input">📷 Rasm tanlash</label>
+      <input type="file" id="st-image-input" accept="image/*" style="display:none" onchange="previewImage(this)">
+      <img id="st-image-preview" class="image-preview" style="display:none">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('store-modal')">Bekor</button>
+      <button class="btn btn-primary" onclick="createStoreItem()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Orders Modal -->
+<div id="orders-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 class="modal-title">📦 Buyurtmalar</h3>
+    <div id="orders-list"><div class="loading-text">Yuklanmoqda...</div></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('orders-modal')">Yopish</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API_URL = window.location.origin;
+let centerId = localStorage.getItem('centerId');
+let storeImageBase64 = '';
+let balanceStudentId = '';
+
+// Init
+window.onload = () => {
+  if (centerId && localStorage.getItem('userRole') === 'boss') {
+    showApp();
+  }
+};
+
+async function handleLogin() {
+  const phone = document.getElementById('login-phone').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+  if (!phone || !password) { showToast('Barcha maydonlarni to\'ldiring', 'error'); return; }
+
+  try {
+    const res = await fetch(`${API_URL}/api/boss/login`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ phone, password })
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('userRole', 'boss');
+      localStorage.setItem('centerId', data.center_id);
+      localStorage.setItem('centerName', data.center_name);
+      centerId = data.center_id;
+      showApp();
+    } else {
+      showToast(data.detail || 'Xatolik yuz berdi', 'error');
+    }
+  } catch(e) {
+    showToast('Server bilan bog\'lanishda xatolik', 'error');
+  }
+}
+
+function handleLogout() {
+  localStorage.clear();
+  centerId = null;
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'flex';
+  document.getElementById('center-name-display').textContent = localStorage.getItem('centerName') || 'SmartEdu';
+  loadDashboard();
+}
+
+// Navigation
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  if (page === 'dashboard') loadDashboard();
+  else if (page === 'rooms') loadRooms();
+  else if (page === 'groups') loadGroups();
+  else if (page === 'teachers') loadTeachers();
+  else if (page === 'courses') loadCourses();
+  else if (page === 'students') loadStudents();
+  else if (page === 'store') loadStore();
+}
+
+// Dashboard
+async function loadDashboard() {
+  try {
+    const res = await fetch(`${API_URL}/api/boss/dashboard/${centerId}`);
+    const d = await res.json();
+    document.getElementById('stat-students').textContent = d.students_count || 0;
+    document.getElementById('stat-groups').textContent = d.groups_count || 0;
+    document.getElementById('stat-teachers').textContent = d.teachers_count || 0;
+    document.getElementById('stat-revenue').textContent = (d.monthly_revenue || 0).toLocaleString() + ' so\'m';
+  } catch(e) { console.error(e); }
+}
+
+// Rooms
+async function loadRooms() {
+  const list = document.getElementById('rooms-list');
+  list.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
+  try {
+    const res = await fetch(`${API_URL}/api/boss/rooms/${centerId}`);
+    const rooms = await res.json();
+    if (!rooms.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">🏠</div>Xonalar yo\'q</div>'; return; }
+    list.innerHTML = rooms.map(r => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🏠 ${r.name}</span>
+          <span class="badge badge-blue">ID: ${r.id?.substring(0,8)||'—'}</span>
+        </div>
+      </div>`).join('');
+  } catch(e) { list.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+}
+
+async function createRoom() {
+  const name = document.getElementById('room-name').value.trim();
+  if (!name) { showToast('Xona nomini kiriting', 'error'); return; }
+  try {
+    await fetch(`${API_URL}/api/boss/rooms`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ center_id: centerId, name })
+    });
+    closeModal('room-modal');
+    document.getElementById('room-name').value = '';
+    loadRooms();
+    showToast('Xona qo\'shildi', 'success');
+  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
+}
+
+// Groups
+let roomsList = [], teachersList = [];
+async function loadGroups() {
+  const list = document.getElementById('groups-list');
+  list.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
+  try {
+    const [grRes, rmRes, tchRes] = await Promise.all([
+      fetch(`${API_URL}/api/boss/groups/${centerId}`),
+      fetch(`${API_URL}/api/boss/rooms/${centerId}`),
+      fetch(`${API_URL}/api/boss/teachers/${centerId}`)
+    ]);
+    const groups = await grRes.json();
+    roomsList = await rmRes.json();
+    teachersList = await tchRes.json();
+
+    if (!groups.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div>Guruhlar yo\'q</div>'; return; }
+    const dayNames = {1:'Du',2:'Se',3:'Ch',4:'Pa',5:'Ju',6:'Sh'};
+    list.innerHTML = groups.map(g => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">👥 ${g.name}</span>
+          <span class="badge badge-green">${g.subject||'—'}</span>
+        </div>
+        <div class="card-detail">🕐 ${g.time_start||'—'} – ${g.time_end||'—'}</div>
+        <div class="card-detail">📅 ${(g.schedule_days||[]).map(d=>dayNames[d]||d).join(', ')}</div>
+        <div class="card-detail">🏠 ${g.room||'—'}</div>
+      </div>`).join('');
+  } catch(e) { list.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+}
+
+async function openModal(id) {
+  if (id === 'group-modal') {
+    if (!roomsList.length) {
+      const [rmRes, tchRes] = await Promise.all([
+        fetch(`${API_URL}/api/boss/rooms/${centerId}`),
+        fetch(`${API_URL}/api/boss/teachers/${centerId}`)
+      ]);
+      roomsList = await rmRes.json();
+      teachersList = await tchRes.json();
+    }
+    const rSel = document.getElementById('g-room');
+    rSel.innerHTML = '<option value="">— Xona tanlang —</option>' + roomsList.map(r=>`<option value="${r.name}">${r.name}</option>`).join('');
+    const tSel = document.getElementById('g-teacher');
+    tSel.innerHTML = '<option value="">— Ustoz tanlang —</option>' + teachersList.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  }
+  if (id === 'student-modal') {
+    const [grRes, cRes] = await Promise.all([
+      fetch(`${API_URL}/api/boss/groups/${centerId}`),
+      fetch(`${API_URL}/api/boss/courses/${centerId}`)
+    ]);
+    const groups = await grRes.json();
+    const courses = await cRes.json();
+    document.getElementById('s-group').innerHTML = '<option value="">— Guruh —</option>' + groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+    document.getElementById('s-course').innerHTML = '<option value="">— Kurs —</option>' + courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  }
+  if (id === 'orders-modal') loadOrders();
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function toggleDay(btn) { btn.classList.toggle('selected'); }
+
+async function createGroup() {
+  const name = document.getElementById('g-name').value.trim();
+  const subject = document.getElementById('g-subject').value.trim();
+  const room = document.getElementById('g-room').value;
+  const teacherId = document.getElementById('g-teacher').value;
+  const timeStart = document.getElementById('g-time-start').value;
+  const timeEnd = document.getElementById('g-time-end').value;
+  const days = [...document.querySelectorAll('.day-btn.selected')].map(b => parseInt(b.dataset.day));
+
+  if (!name || !subject || !room || !timeStart || !timeEnd || !days.length) {
+    showToast('Barcha maydonlarni to\'ldiring', 'error'); return;
+  }
+  try {
+    await fetch(`${API_URL}/api/boss/groups`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ center_id: centerId, name, subject, room, teacher_id: teacherId||null, time_start: timeStart, time_end: timeEnd, schedule_days: days })
+    });
+    closeModal('group-modal');
+    loadGroups();
+    showToast('Guruh qo\'shildi', 'success');
+  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
+}
+
+// Teachers
+async function loadTeachers() {
+  const list = document.getElementById('teachers-list');
+  list.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
+  try {
+    const res = await fetch(`${API_URL}/api/boss/teachers/${centerId}`);
+    const teachers = await res.json();
+    if (!teachers.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">👨‍🏫</div>Ustozlar yo\'q</div>'; return; }
+    list.innerHTML = teachers.map(t => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">👨‍🏫 ${t.name}</span>
+          <span class="badge badge-blue">${(t.groups||[]).length} guruh</span>
+        </div>
+        <div class="card-detail">📞 ${t.phone}</div>
+      </div>`).join('');
+  } catch(e) { list.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+}
+
+async function createTeacher() {
+  const name = document.getElementById('t-name').value.trim();
+  const phone = document.getElementById('t-phone').value.trim();
+  const password = document.getElementById('t-password').value.trim();
+  if (!name || !phone || !password) { showToast('Barcha maydonlarni to\'ldiring', 'error'); return; }
+  try {
+    await fetch(`${API_URL}/api/boss/teachers`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ center_id: centerId, name, phone, password, groups: [] })
+    });
+    closeModal('teacher-modal');
+    document.getElementById('t-name').value = '';
+    document.getElementById('t-phone').value = '';
+    document.getElementById('t-password').value = '';
+    loadTeachers();
+    showToast('Ustoz qo\'shildi', 'success');
+  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
+}
+
+// Courses
+async function loadCourses() {
+  const list = document.getElementById('courses-list');
+  list.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
+  try {
+    const res = await fetch(`${API_URL}/api/boss/courses/${centerId}`);
+    const courses = await res.json();
+    if (!courses.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div>Kurslar yo\'q</div>'; return; }
+    list.innerHTML = courses.map(c => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📚 ${c.name}</span>
+          <span class="badge badge-orange">${(c.monthly_fee||0).toLocaleString()} so'm/oy</span>
+        </div>
+      </div>`).join('');
+  } catch(e) { list.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+}
+
+async function createCourse() {
+  const name = document.getElementById('c-name').value.trim();
+  const fee = document.getElementById('c-fee').value;
+  if (!name || !fee) { showToast('Barcha maydonlarni to\'ldiring', 'error'); return; }
+  try {
+    await fetch(`${API_URL}/api/boss/courses`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ center_id: centerId, name, monthly_fee: parseFloat(fee) })
+    });
+    closeModal('course-modal');
+    document.getElementById('c-name').value = '';
+    document.getElementById('c-fee').value = '';
+    loadCourses();
+    showToast('Kurs qo\'shildi', 'success');
+  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
+}
+
+// Students
+async function loadStudents() {
+  const list = document.getElementById('students-list');
+  list.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
+  try {
+    const res = await fetch(`${API_URL}/api/boss/students/${centerId}`);
+    const students = await res.json();
+    if (!students.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">🎓</div>O\'quvchilar yo\'q</div>'; return; }
+    list.innerHTML = students.map(s => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🎓 ${s.name}</span>
+          <span class="badge badge-green">${(s.balance||0).toLocaleString()} so'm</span>
+        </div>
+        <div class="card-detail">📞 ${s.phone}</div>
+        <div class="card-detail">👨‍👩‍👦 Ota-ona: ${s.parent_phone||'—'}</div>
+        <div class="card-detail">🪙 Coinlar: ${s.coins||0}</div>
+        <div style="margin-top:10px">
+          <button class="btn btn-success btn-sm" onclick="openBalanceModal('${s.id}','${s.name}')">💰 Balans to'ldirish</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { list.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+}
+
+async function createStudent() {
+  const name = document.getElementById('s-name').value.trim();
+  const phone = document.getElementById('s-phone').value.trim();
+  const parent = document.getElementById('s-parent').value.trim();
+  const groupId = document.getElementById('s-group').value;
+  const courseId = document.getElementById('s-course').value;
+  const password = document.getElementById('s-password').value.trim();
+  if (!name || !phone || !parent || !groupId || !courseId || !password) {
+    showToast('Barcha maydonlarni to\'ldiring', 'error'); return;
+  }
+  try {
+    await fetch(`${API_URL}/api/boss/students`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ center_id: centerId, name, phone, parent_phone: parent, group_id: groupId, course_id: courseId, password, balance: 0, coins: 0, status: 'active' })
+    });
+    closeModal('student-modal');
+    loadStudents();
+    showToast('O\'quvchi qo\'shildi', 'success');
+  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
+}
+
+function openBalanceModal(id, name) {
+  balanceStudentId = id;
+  document.getElementById('balance-student-name').textContent = '👤 ' + name;
+  document.getElementById('balance-amount').value = '';
+  document.getElementById('balance-modal').classList.add('open');
+}
+
+async function topupBalance() {
+  const amount = document.getElementById('balance-amount').value;
+  if (!amount) { showToast('Miqdorni kiriting', 'error'); return; }
+  try {
+    await fetch(`${API_URL}/api/boss/students/${balanceStudentId}/balance`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ amount: parseFloat(amount) })
+    });
+    closeModal('balance-modal');
+    loadStudents();
+    showToast('Balans to\'ldirildi', 'success');
+  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
+}
+
+// Store
+async function loadStore() {
+  const grid = document.getElementById('store-items');
+  grid.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
+  try {
+    const res = await fetch(`${API_URL}/api/boss/store/${centerId}`);
+    const items = await res.json();
+    if (!items.length) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🛒</div>Mahsulotlar yo\'q</div>'; return; }
+    grid.innerHTML = items.map(item => `
+      <div class="item-card">
+        ${item.image_base64 
+          ? `<img src="${item.image_base64}" style="width:100%;height:160px;object-fit:cover">`
+          : `<div class="item-img">🎁</div>`}
+        <div class="item-body">
+          <div class="item-name">${item.name}</div>
+          <div class="item-price">🪙 ${item.coin_price} coin</div>
+        </div>
+      </div>`).join('');
+  } catch(e) { grid.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+}
+
+function previewImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    storeImageBase64 = e.target.result;
+    const preview = document.getElementById('st-image-preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function createStoreItem() {
+  const name = document.getElementById('st-name').value.trim();
+  const price = document.getElementById('st-price').value;
+  if (!name || !price || !storeImageBase64) { showToast('Barcha maydonlarni to\'ldiring', 'error'); return; }
+  try {
+    await fetch(`${API_URL}/api/boss/store`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ center_id: centerId, name, coin_price: parseInt(price), image_base64: storeImageBase64 })
+    });
+    closeModal('store-modal');
+    document.getElementById('st-name').value = '';
+    document.getElementById('st-price').value = '';
+    storeImageBase64 = '';
+    document.getElementById('st-image-preview').style.display = 'none';
+    loadStore();
+    showToast('Mahsulot qo\'shildi', 'success');
+  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
+}
+
+async function loadOrders() {
+  const list = document.getElementById('orders-list');
+  list.innerHTML = '<div class="loading-text">Yuklanmoqda...</div>';
+  try {
+    const res = await fetch(`${API_URL}/api/boss/store/orders/${centerId}`);
+    const orders = await res.json();
+    const pending = orders.filter(o => o.status === 'pending');
+    if (!pending.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div>Yangi buyurtmalar yo\'q</div>'; return; }
+    list.innerHTML = pending.map(o => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📦 ${o.item_name || 'Mahsulot'}</span>
+          <span class="badge badge-orange">Kutmoqda</span>
+        </div>
+        <div class="card-detail">👤 ${o.student_name || '—'}</div>
+        <div class="card-detail">🪙 ${o.coin_price || 0} coin</div>
+        <div style="margin-top:10px">
+          <button class="btn btn-success btn-sm" onclick="completeOrder('${o.id}')">✅ Bajarildi</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { list.innerHTML = '<div class="loading-text">Xatolik yuz berdi</div>'; }
+}
+
+async function completeOrder(orderId) {
+  try {
+    await fetch(`${API_URL}/api/boss/store/orders/${orderId}/complete`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: '{}' });
+    loadOrders();
+    showToast('Buyurtma bajarildi', 'success');
+  } catch(e) { showToast('Xatolik yuz berdi', 'error'); }
+}
+
+// Toast
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast toast-${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
