@@ -1634,6 +1634,24 @@ async def startup_db_init():
     except Exception as e:
         logger.error(f"❌ DB initialization error: {e}")
 
+@app.get("/moderator")
+async def moderator():
+    return FileResponse("moderator.html")
+
+@app.get("/students")
+async def students():
+    return FileResponse("students.html")
+
+@app.get("/teachers")
+async def teachers():
+    return FileResponse("teachers.html")
+
+@app.get("/parents")
+async def parents():
+    return FileResponse("parents.html")
+
+
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
