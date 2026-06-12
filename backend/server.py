@@ -1067,7 +1067,6 @@ const API_BASE = '/api';
 let currentPhone = '';
 let authToken = '';
 
-// Helper function for API calls
 async function apiCall(url, options = {}) {
     const headers = {
         'Content-Type': 'application/json',
@@ -1085,8 +1084,12 @@ async function apiCall(url, options = {}) {
         });
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Xatolik yuz berdi');
+            let errorMessage = 'Xatolik yuz berdi';
+            try {
+                const error = await response.json();
+                errorMessage = error.detail || errorMessage;
+            } catch(e) {}
+            throw new Error(errorMessage);
         }
         
         return await response.json();
@@ -1101,7 +1104,7 @@ async function login1() {
     const password = document.getElementById('pwd1').value;
     
     if (!phone || !password) {
-        document.getElementById('err1').innerText = 'Iltimos, barcha maydonlarni to\'ldiring!';
+        document.getElementById('err1').innerText = 'Iltimos, barcha maydonlarni toldiring';
         return;
     }
     
@@ -1120,7 +1123,7 @@ async function login1() {
             document.getElementById('err1').innerText = '';
         }
     } catch (error) {
-        document.getElementById('err1').innerText = error.message || 'Login xato!';
+        document.getElementById('err1').innerText = error.message || 'Login xato';
     }
 }
 
@@ -1128,7 +1131,7 @@ async function login2() {
     const password2 = document.getElementById('pwd2').value;
     
     if (!password2) {
-        document.getElementById('err2').innerText = 'Iltimos, ikkinchi parolni kiriting!';
+        document.getElementById('err2').innerText = 'Iltimos, ikkinchi parolni kiriting';
         return;
     }
     
@@ -1142,7 +1145,6 @@ async function login2() {
         
         if (data.success && data.token) {
             authToken = data.token;
-            // Save token to localStorage
             localStorage.setItem('adminToken', authToken);
             localStorage.setItem('adminPhone', currentPhone);
             
@@ -1151,7 +1153,7 @@ async function login2() {
             await loadDashboard();
         }
     } catch (error) {
-        document.getElementById('err2').innerText = error.message || 'Tasdiqlash xato!';
+        document.getElementById('err2').innerText = error.message || 'Tasdiqlash xato';
     }
 }
 
@@ -1180,24 +1182,28 @@ async function loadCenters() {
             return;
         }
         
-        list.innerHTML = centers.map(center => `
+        list.innerHTML = centers.map(center => {
+            const statusText = center.status === 'active' ? 'Faol' : 'Muzlatilgan';
+            const statusIcon = center.status === 'active' ? '✅' : '❄️';
+            const freezeText = center.status === 'active' ? 'Muzlatish' : 'Faollashtirish';
+            
+            return `
             <div class="center-card">
                 <div class="center-info">
                     <b>${escapeHtml(center.name)}</b>
                     <p>📞 ${escapeHtml(center.phone)}</p>
                     <p>📍 ${escapeHtml(center.address)}</p>
                     <p>💰 Tarif: ${escapeHtml(center.tariff)}</p>
-                    <p>📊 Status: ${center.status === 'active' ? '✅ Faol' : '❄️ Muzlatilgan'}</p>
+                    <p>📊 Status: ${statusIcon} ${statusText}</p>
                 </div>
                 <div class="center-actions">
-                    <button class="btn-edit" onclick="updateTariff('${center.id}')">💎 Tarif</button>
-                    <button class="btn-freeze" onclick="toggleStatus('${center.id}', '${center.status}')">
-                        ${center.status === 'active' ? '❄️ Muzlatish' : '✅ Faollashtirish'}
-                    </button>
-                    <button class="btn-delete" onclick="deleteCenter('${center.id}')">🗑️ O\'chirish</button>
+                    <button class="btn-edit" onclick="updateTariff('${center.id}')">Tarif</button>
+                    <button class="btn-freeze" onclick="toggleStatus('${center.id}', '${center.status}')">${freezeText}</button>
+                    <button class="btn-delete" onclick="deleteCenter('${center.id}')">Ochirish</button>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (error) {
         console.error('Load centers error:', error);
         document.getElementById('centersList').innerHTML = '<div class="error">Markazlarni yuklashda xatolik</div>';
@@ -1215,7 +1221,7 @@ async function toggleStatus(id, currentStatus) {
                 body: JSON.stringify({ status: newStatus })
             });
             await loadDashboard();
-            showMessage('Muvaffaqiyatli o\'zgartirildi!', 'success');
+            showMessage('Muvaffaqiyatli ozgartirildi', 'success');
         } catch (error) {
             showMessage(error.message, 'error');
         }
@@ -1231,23 +1237,23 @@ async function updateTariff(id) {
                 body: JSON.stringify({ tariff })
             });
             await loadDashboard();
-            showMessage('Tarif muvaffaqiyatli o\'zgartirildi!', 'success');
+            showMessage('Tarif muvaffaqiyatli ozgartirildi', 'success');
         } catch (error) {
             showMessage(error.message, 'error');
         }
     } else if (tariff) {
-        showMessage('Noto\'g\'ri tarif nomi!', 'error');
+        showMessage('Notogri tarif nomi', 'error');
     }
 }
 
 async function deleteCenter(id) {
-    if (confirm('⚠️ Diqqat! Bu markazni o\'chirish barcha ma\'lumotlarni yo\'q qiladi. Davom etasizmi?')) {
+    if (confirm('Diqqat! Bu markazni ochirish barcha malumotlarni yoq qiladi. Davom etasizmi?')) {
         try {
             await apiCall(API_BASE + '/admin/centers/' + id, {
                 method: 'DELETE'
             });
             await loadDashboard();
-            showMessage('Markaz muvaffaqiyatli o\'chirildi!', 'success');
+            showMessage('Markaz muvaffaqiyatli ochirildi', 'success');
         } catch (error) {
             showMessage(error.message, 'error');
         }
@@ -1264,19 +1270,18 @@ async function createCenter() {
         tariff: document.getElementById('centerTariff').value
     };
     
-    // Validation
     if (!centerData.name || !centerData.phone || !centerData.password || !centerData.address) {
-        alert('Iltimos, barcha maydonlarni to\'ldiring!');
+        alert('Iltimos, barcha maydonlarni toldiring');
         return;
     }
     
     if (centerData.password !== centerData.password2) {
-        alert('Parollar bir-biriga mos kelmadi!');
+        alert('Parollar bir-biriga mos kelmadi');
         return;
     }
     
     if (centerData.password.length < 4) {
-        alert('Parol kamida 4 belgidan iborat bo\'lishi kerak!');
+        alert('Parol kamida 4 belgidan iborat bolishi kerak');
         return;
     }
     
@@ -1288,9 +1293,8 @@ async function createCenter() {
         
         closeAddModal();
         await loadDashboard();
-        showMessage('Yangi markaz muvaffaqiyatli yaratildi!', 'success');
+        showMessage('Yangi markaz muvaffaqiyatli yaratildi', 'success');
         
-        // Clear form
         document.getElementById('centerName').value = '';
         document.getElementById('centerPhone').value = '';
         document.getElementById('centerPwd').value = '';
@@ -1337,11 +1341,14 @@ function showMessage(message, type) {
     messageDiv.style.padding = '15px 20px';
     messageDiv.style.borderRadius = '5px';
     messageDiv.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    messageDiv.style.zIndex = '10000';
     
     document.body.appendChild(messageDiv);
     
     setTimeout(() => {
-        messageDiv.remove();
+        if (messageDiv && messageDiv.remove) {
+            messageDiv.remove();
+        }
     }, 3000);
 }
 
@@ -1352,7 +1359,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Check for saved token on page load
 window.addEventListener('DOMContentLoaded', () => {
     const savedToken = localStorage.getItem('adminToken');
     const savedPhone = localStorage.getItem('adminPhone');
