@@ -666,71 +666,707 @@ async def admin_panel_page():
     return HTMLResponse("""
 <!DOCTYPE html>
 <html lang="uz">
-<head><meta charset="UTF-8"><title>Admin Panel</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh}
-.login-container{display:flex;justify-content:center;align-items:center;min-height:100vh}
-.login-box{background:#fff;padding:40px;border-radius:10px;width:100%;max-width:400px}
-.login-box h2{text-align:center;margin-bottom:30px}
-.form-group{margin-bottom:20px}
-.form-group input{width:100%;padding:12px;border:1px solid #ddd;border-radius:5px}
-.btn{width:100%;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:5px;cursor:pointer}
-.error{color:#e74c3c;margin-top:10px;text-align:center}
-.dashboard{display:none}
-.dashboard.active{display:block}
-.header{background:#fff;padding:20px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:30px}
-.stat-card{background:#fff;padding:30px;border-radius:10px;text-align:center}
-.centers-section{background:#fff;padding:30px;border-radius:10px}
-.section-header{display:flex;justify-content:space-between;margin-bottom:20px}
-.add-btn{padding:10px 20px;background:#2ecc71;color:#fff;border:none;border-radius:5px;cursor:pointer}
-.center-card{border:1px solid #ddd;padding:20px;border-radius:5px;margin-bottom:10px;display:flex;justify-content:space-between}
-.btn-edit{background:#3498db;color:#fff;padding:5px 10px;border:none;border-radius:3px}
-.btn-freeze{background:#f39c12;color:#fff;padding:5px 10px;border:none;border-radius:3px}
-.btn-delete{background:#e74c3c;color:#fff;padding:5px 10px;border:none;border-radius:3px}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center}
-.modal.active{display:flex}
-.modal-content{background:#fff;padding:30px;border-radius:10px;width:90%;max-width:500px}
-.modal-actions{display:flex;gap:10px;margin-top:20px}
-</style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Smart Edu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .success {
+            color: #27ae60;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .dashboard {
+            display: none;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .dashboard.active {
+            display: block;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .stat-card p {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .centers-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .add-btn {
+            padding: 10px 20px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .add-btn:hover {
+            background: #219a52;
+        }
+        
+        .center-card {
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            transition: box-shadow 0.3s;
+        }
+        
+        .center-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .center-info {
+            flex: 1;
+        }
+        
+        .center-info b {
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .center-info p {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .center-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-edit, .btn-freeze, .btn-delete {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        
+        .btn-edit:hover, .btn-freeze:hover, .btn-delete:hover {
+            opacity: 0.8;
+        }
+        
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-freeze {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .center-card {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .center-actions {
+                justify-content: center;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
 <div class="login-container" id="loginContainer">
-<div class="login-box">
-<h2>Admin Panel</h2>
-<div id="step1">
-<div class="form-group"><input type="text" id="phone" placeholder="Telefon"></div>
-<div class="form-group"><input type="password" id="pwd1" placeholder="Parol 1"></div>
-<button class="btn" onclick="login1()">Kirish</button>
-<div id="err1" class="error"></div>
+    <div class="login-box">
+        <h2>📚 Admin Panel</h2>
+        <div id="step1">
+            <div class="form-group">
+                <input type="text" id="phone" placeholder="📞 Telefon raqam">
+            </div>
+            <div class="form-group">
+                <input type="password" id="pwd1" placeholder="🔒 Parol 1">
+            </div>
+            <button class="btn" onclick="login1()">Kirish</button>
+            <div id="err1" class="error"></div>
+        </div>
+        <div id="step2" style="display:none">
+            <div class="form-group">
+                <input type="password" id="pwd2" placeholder="🔒 Ikkinchi parol">
+            </div>
+            <button class="btn" onclick="login2()">Tasdiqlash</button>
+            <div id="err2" class="error"></div>
+        </div>
+    </div>
 </div>
-<div id="step2" style="display:none">
-<div class="form-group"><input type="password" id="pwd2" placeholder="Parol 2"></div>
-<button class="btn" onclick="login2()">Tasdiqlash</button>
-<div id="err2" class="error"></div>
-</div>
-</div>
-</div>
+
 <div class="dashboard" id="dashboard">
-<div class="header"><h1>Admin Dashboard</h1><button class="btn" onclick="logout()" style="width:auto">Chiqish</button></div>
-<div class="stats"><div class="stat-card"><h3>Jami Markazlar</h3><p id="totalCenters">0</p></div><div class="stat-card"><h3>Faol Markazlar</h3><p id="activeCenters">0</p></div><div class="stat-card"><h3>Jami O'quvchilar</h3><p id="totalStudents">0</p></div></div>
-<div class="centers-section"><div class="section-header"><h2>O'quv Markazlar</h2><button class="add-btn" onclick="openAddModal()">+ Yangi Markaz</button></div><div id="centersList"></div></div>
+    <div class="header">
+        <h1>🏫 Admin Dashboard</h1>
+        <button class="btn" onclick="logout()" style="width:auto; padding:10px 20px">🚪 Chiqish</button>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <h3>📊 Jami Markazlar</h3>
+            <p id="totalCenters">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>✅ Faol Markazlar</h3>
+            <p id="activeCenters">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>👨‍🎓 Jami O'quvchilar</h3>
+            <p id="totalStudents">0</p>
+        </div>
+    </div>
+    
+    <div class="centers-section">
+        <div class="section-header">
+            <h2>🏢 O'quv Markazlar</h2>
+            <button class="add-btn" onclick="openAddModal()">➕ Yangi Markaz</button>
+        </div>
+        <div id="centersList">
+            <div class="loading">Yuklanmoqda...</div>
+        </div>
+    </div>
 </div>
-<div class="modal" id="addModal"><div class="modal-content"><h2>Yangi Markaz</h2><div class="form-group"><input type="text" id="centerName" placeholder="Nomi"></div><div class="form-group"><input type="text" id="centerPhone" placeholder="Telefon"></div><div class="form-group"><input type="password" id="centerPwd" placeholder="Parol"></div><div class="form-group"><input type="password" id="centerPwd2" placeholder="Parol takror"></div><div class="form-group"><input type="text" id="centerAddress" placeholder="Manzil"></div><div class="form-group"><select id="centerTariff"><option value="Pro">Pro</option><option value="Pro+">Pro+</option><option value="VIP">VIP</option></select></div><div class="modal-actions"><button class="btn" onclick="closeAddModal()" style="background:#95a5a6">Bekor</button><button class="btn" onclick="createCenter()" style="background:#2ecc71">Yaratish</button></div></div></div>
+
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <h2>➕ Yangi Markaz Qo'shish</h2>
+        <div class="form-group">
+            <input type="text" id="centerName" placeholder="Markaz nomi">
+        </div>
+        <div class="form-group">
+            <input type="text" id="centerPhone" placeholder="Telefon raqam">
+        </div>
+        <div class="form-group">
+            <input type="password" id="centerPwd" placeholder="Parol">
+        </div>
+        <div class="form-group">
+            <input type="password" id="centerPwd2" placeholder="Parolni takrorlang">
+        </div>
+        <div class="form-group">
+            <input type="text" id="centerAddress" placeholder="Manzil">
+        </div>
+        <div class="form-group">
+            <select id="centerTariff">
+                <option value="Pro">Pro</option>
+                <option value="Pro+">Pro+</option>
+                <option value="VIP">VIP</option>
+            </select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn" onclick="closeAddModal()" style="background:#95a5a6">Bekor qilish</button>
+            <button class="btn" onclick="createCenter()" style="background:#27ae60">Yaratish</button>
+        </div>
+    </div>
+</div>
+
 <script>
-const API_BASE='/api';let currentPhone='';
-async function login1(){const p=document.getElementById('phone').value,p1=document.getElementById('pwd1').value;if(!p||!p1){document.getElementById('err1').innerText='Malumot kiriting!';return;}try{const r=await fetch(API_BASE+'/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:p,password:p1})});if(r.ok){currentPhone=p;document.getElementById('step1').style.display='none';document.getElementById('step2').style.display='block';}else{document.getElementById('err1').innerText='Xato!';}}catch(e){document.getElementById('err1').innerText='Xatolik!';}}
-async function login2(){const p2=document.getElementById('pwd2').value;if(!p2){document.getElementById('err2').innerText='Parolni kiriting!';return;}try{const r=await fetch(API_BASE+'/admin/login2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:currentPhone,password2:p2})});if(r.ok){document.getElementById('loginContainer').style.display='none';document.getElementById('dashboard').classList.add('active');loadDashboard();}else{document.getElementById('err2').innerText='Xato!';}}catch(e){document.getElementById('err2').innerText='Xatolik!';}}
-async function loadDashboard(){try{const r=await fetch(API_BASE+'/admin/dashboard');const d=await r.json();document.getElementById('totalCenters').innerText=d.total_centers||0;document.getElementById('activeCenters').innerText=d.active_centers||0;document.getElementById('totalStudents').innerText=d.total_students||0;loadCenters();}catch(e){}}
-async function loadCenters(){try{const r=await fetch(API_BASE+'/admin/centers');const c=await r.json();const list=document.getElementById('centersList');list.innerHTML='';c.forEach(x=>{list.innerHTML+=`<div class="center-card"><div><b>${x.name}</b><br>${x.phone}<br>${x.address}</div><div><button class="btn-edit" onclick="updateTariff('${x.id}')">Tarif</button><button class="btn-freeze" onclick="toggleStatus('${x.id}','${x.status}')">${x.status=='active'?'Muzlatish':'Faollashtirish'}</button><button class="btn-delete" onclick="deleteCenter('${x.id}')">O\'chirish</button></div></div>`;})}catch(e){}}
-async function toggleStatus(id,s){const ns=s=='active'?'frozen':'active';await fetch(API_BASE+'/admin/centers/'+id+'/status',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:ns})});loadDashboard();}
-async function updateTariff(id){const t=prompt('Yangi tarif (Pro, Pro+, VIP):');if(t)await fetch(API_BASE+'/admin/centers/'+id+'/tariff',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({tariff:t})});loadDashboard();}
-async function deleteCenter(id){if(confirm('O\'chirmoqchimisiz?')){await fetch(API_BASE+'/admin/centers/'+id,{method:'DELETE'});loadDashboard();}}
-function openAddModal(){document.getElementById('addModal').classList.add('active');}
-function closeAddModal(){document.getElementById('addModal').classList.remove('active');}
-async function createCenter(){const c={name:document.getElementById('centerName').value,phone:document.getElementById('centerPhone').value,password:document.getElementById('centerPwd').value,password2:document.getElementById('centerPwd2').value,address:document.getElementById('centerAddress').value,tariff:document.getElementById('centerTariff').value};if(c.password!==c.password2){alert('Parollar mos emas');return;}await fetch(API_BASE+'/admin/centers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});closeAddModal();loadDashboard();}
-function logout(){document.getElementById('loginContainer').style.display='flex';document.getElementById('dashboard').classList.remove('active');document.getElementById('step1').style.display='block';document.getElementById('step2').style.display='none';}
+const API_BASE = '/api';
+let currentPhone = '';
+let authToken = '';
+
+// Helper function for API calls
+async function apiCall(url, options = {}) {
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+    
+    if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Xatolik yuz berdi');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
+}
+
+async function login1() {
+    const phone = document.getElementById('phone').value.trim();
+    const password = document.getElementById('pwd1').value;
+    
+    if (!phone || !password) {
+        document.getElementById('err1').innerText = 'Iltimos, barcha maydonlarni to\'ldiring!';
+        return;
+    }
+    
+    document.getElementById('err1').innerText = '';
+    
+    try {
+        const data = await apiCall(API_BASE + '/admin/login', {
+            method: 'POST',
+            body: JSON.stringify({ phone, password })
+        });
+        
+        if (data.success) {
+            currentPhone = phone;
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'block';
+            document.getElementById('err1').innerText = '';
+        }
+    } catch (error) {
+        document.getElementById('err1').innerText = error.message || 'Login xato!';
+    }
+}
+
+async function login2() {
+    const password2 = document.getElementById('pwd2').value;
+    
+    if (!password2) {
+        document.getElementById('err2').innerText = 'Iltimos, ikkinchi parolni kiriting!';
+        return;
+    }
+    
+    document.getElementById('err2').innerText = '';
+    
+    try {
+        const data = await apiCall(API_BASE + '/admin/login2', {
+            method: 'POST',
+            body: JSON.stringify({ phone: currentPhone, password2 })
+        });
+        
+        if (data.success && data.token) {
+            authToken = data.token;
+            // Save token to localStorage
+            localStorage.setItem('adminToken', authToken);
+            localStorage.setItem('adminPhone', currentPhone);
+            
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('dashboard').classList.add('active');
+            await loadDashboard();
+        }
+    } catch (error) {
+        document.getElementById('err2').innerText = error.message || 'Tasdiqlash xato!';
+    }
+}
+
+async function loadDashboard() {
+    try {
+        const data = await apiCall(API_BASE + '/admin/dashboard');
+        document.getElementById('totalCenters').innerText = data.total_centers || 0;
+        document.getElementById('activeCenters').innerText = data.active_centers || 0;
+        document.getElementById('totalStudents').innerText = data.total_students || 0;
+        await loadCenters();
+    } catch (error) {
+        console.error('Dashboard load error:', error);
+        if (error.message.includes('401') || error.message.includes('403')) {
+            logout();
+        }
+    }
+}
+
+async function loadCenters() {
+    try {
+        const centers = await apiCall(API_BASE + '/admin/centers');
+        const list = document.getElementById('centersList');
+        
+        if (!centers || centers.length === 0) {
+            list.innerHTML = '<div style="text-align:center; padding:20px;">Hech qanday markaz topilmadi</div>';
+            return;
+        }
+        
+        list.innerHTML = centers.map(center => `
+            <div class="center-card">
+                <div class="center-info">
+                    <b>${escapeHtml(center.name)}</b>
+                    <p>📞 ${escapeHtml(center.phone)}</p>
+                    <p>📍 ${escapeHtml(center.address)}</p>
+                    <p>💰 Tarif: ${escapeHtml(center.tariff)}</p>
+                    <p>📊 Status: ${center.status === 'active' ? '✅ Faol' : '❄️ Muzlatilgan'}</p>
+                </div>
+                <div class="center-actions">
+                    <button class="btn-edit" onclick="updateTariff('${center.id}')">💎 Tarif</button>
+                    <button class="btn-freeze" onclick="toggleStatus('${center.id}', '${center.status}')">
+                        ${center.status === 'active' ? '❄️ Muzlatish' : '✅ Faollashtirish'}
+                    </button>
+                    <button class="btn-delete" onclick="deleteCenter('${center.id}')">🗑️ O\'chirish</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Load centers error:', error);
+        document.getElementById('centersList').innerHTML = '<div class="error">Markazlarni yuklashda xatolik</div>';
+    }
+}
+
+async function toggleStatus(id, currentStatus) {
+    const newStatus = currentStatus === 'active' ? 'frozen' : 'active';
+    const action = newStatus === 'active' ? 'faollashtirishni' : 'muzlatishni';
+    
+    if (confirm(`Haqiqatan ham bu markazni ${action} xohlaysizmi?`)) {
+        try {
+            await apiCall(API_BASE + '/admin/centers/' + id + '/status', {
+                method: 'PUT',
+                body: JSON.stringify({ status: newStatus })
+            });
+            await loadDashboard();
+            showMessage('Muvaffaqiyatli o\'zgartirildi!', 'success');
+        } catch (error) {
+            showMessage(error.message, 'error');
+        }
+    }
+}
+
+async function updateTariff(id) {
+    const tariff = prompt('Yangi tarifni kiriting (Pro, Pro+, VIP):', 'Pro');
+    if (tariff && ['Pro', 'Pro+', 'VIP'].includes(tariff)) {
+        try {
+            await apiCall(API_BASE + '/admin/centers/' + id + '/tariff', {
+                method: 'PUT',
+                body: JSON.stringify({ tariff })
+            });
+            await loadDashboard();
+            showMessage('Tarif muvaffaqiyatli o\'zgartirildi!', 'success');
+        } catch (error) {
+            showMessage(error.message, 'error');
+        }
+    } else if (tariff) {
+        showMessage('Noto\'g\'ri tarif nomi!', 'error');
+    }
+}
+
+async function deleteCenter(id) {
+    if (confirm('⚠️ Diqqat! Bu markazni o\'chirish barcha ma\'lumotlarni yo\'q qiladi. Davom etasizmi?')) {
+        try {
+            await apiCall(API_BASE + '/admin/centers/' + id, {
+                method: 'DELETE'
+            });
+            await loadDashboard();
+            showMessage('Markaz muvaffaqiyatli o\'chirildi!', 'success');
+        } catch (error) {
+            showMessage(error.message, 'error');
+        }
+    }
+}
+
+async function createCenter() {
+    const centerData = {
+        name: document.getElementById('centerName').value.trim(),
+        phone: document.getElementById('centerPhone').value.trim(),
+        password: document.getElementById('centerPwd').value,
+        password2: document.getElementById('centerPwd2').value,
+        address: document.getElementById('centerAddress').value.trim(),
+        tariff: document.getElementById('centerTariff').value
+    };
+    
+    // Validation
+    if (!centerData.name || !centerData.phone || !centerData.password || !centerData.address) {
+        alert('Iltimos, barcha maydonlarni to\'ldiring!');
+        return;
+    }
+    
+    if (centerData.password !== centerData.password2) {
+        alert('Parollar bir-biriga mos kelmadi!');
+        return;
+    }
+    
+    if (centerData.password.length < 4) {
+        alert('Parol kamida 4 belgidan iborat bo\'lishi kerak!');
+        return;
+    }
+    
+    try {
+        await apiCall(API_BASE + '/admin/centers', {
+            method: 'POST',
+            body: JSON.stringify(centerData)
+        });
+        
+        closeAddModal();
+        await loadDashboard();
+        showMessage('Yangi markaz muvaffaqiyatli yaratildi!', 'success');
+        
+        // Clear form
+        document.getElementById('centerName').value = '';
+        document.getElementById('centerPhone').value = '';
+        document.getElementById('centerPwd').value = '';
+        document.getElementById('centerPwd2').value = '';
+        document.getElementById('centerAddress').value = '';
+    } catch (error) {
+        showMessage(error.message, 'error');
+    }
+}
+
+function openAddModal() {
+    document.getElementById('addModal').classList.add('active');
+}
+
+function closeAddModal() {
+    document.getElementById('addModal').classList.remove('active');
+}
+
+function logout() {
+    authToken = '';
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminPhone');
+    currentPhone = '';
+    
+    document.getElementById('loginContainer').style.display = 'flex';
+    document.getElementById('dashboard').classList.remove('active');
+    document.getElementById('step1').style.display = 'block';
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('pwd1').value = '';
+    document.getElementById('pwd2').value = '';
+    document.getElementById('phone').value = '';
+}
+
+function showMessage(message, type) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = type === 'success' ? 'success' : 'error';
+    messageDiv.textContent = message;
+    messageDiv.style.position = 'fixed';
+    messageDiv.style.top = '20px';
+    messageDiv.style.right = '20px';
+    messageDiv.style.zIndex = '9999';
+    messageDiv.style.background = type === 'success' ? '#27ae60' : '#e74c3c';
+    messageDiv.style.color = 'white';
+    messageDiv.style.padding = '15px 20px';
+    messageDiv.style.borderRadius = '5px';
+    messageDiv.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    
+    document.body.appendChild(messageDiv);
+    
+    setTimeout(() => {
+        messageDiv.remove();
+    }, 3000);
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Check for saved token on page load
+window.addEventListener('DOMContentLoaded', () => {
+    const savedToken = localStorage.getItem('adminToken');
+    const savedPhone = localStorage.getItem('adminPhone');
+    
+    if (savedToken && savedPhone) {
+        authToken = savedToken;
+        currentPhone = savedPhone;
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('dashboard').classList.add('active');
+        loadDashboard().catch(() => {
+            logout();
+        });
+    }
+});
 </script>
 </body>
 </html>
